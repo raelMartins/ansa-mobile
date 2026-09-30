@@ -1,13 +1,25 @@
+/**
+ * Motion: tab switches use React Navigation default cross-fade; header is static wordmark.
+ */
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { Wordmark } from "../../core/ui/Wordmark";
+import { brand } from "../../core/ui/brandColors";
 import { useTheme } from "../../core/ui/ThemeContext";
 import { OverviewScreen } from "../overview/screens/OverviewScreen";
-import { ModulePlaceholderScreen } from "./ModulePlaceholderScreen";
+import { ModuleComingSoonScreen } from "./ModuleComingSoonScreen";
 import { MoreScreen } from "./MoreScreen";
+import {
+  TabIconMore,
+  TabIconOrders,
+  TabIconOverview,
+  TabIconProducts,
+} from "../ui/MerchantTabIcons";
 import type { MerchantTabParamList } from "../../core/navigation/types";
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
+
+const TAB_ICON = 22;
 
 export function MerchantTabs() {
   const { colors, fonts } = useTheme();
@@ -15,41 +27,67 @@ export function MerchantTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
+        headerStyle: {
+          backgroundColor: colors.bg,
+          ...Platform.select({
+            ios: { shadowColor: brand.forest, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+            android: { elevation: 2 },
+          }),
+        },
+        headerShadowVisible: false,
         headerTintColor: colors.text,
         headerTitleStyle: { fontFamily: fonts.semiBold },
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.bg,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          paddingTop: 6,
+          height: Platform.OS === "ios" ? 88 : 64,
+        },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11, marginBottom: Platform.OS === "ios" ? 0 : 8 },
         headerTitle: () => (
           <View style={{ marginLeft: -4 }}>
             <Wordmark height={16} badge={false} />
           </View>
         ),
         headerTitleAlign: "left",
+        sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tab.Screen name="Overview" component={OverviewScreen} options={{ title: "Overview" }} />
+      <Tab.Screen
+        name="Overview"
+        component={OverviewScreen}
+        options={{
+          title: "Overview",
+          tabBarIcon: ({ color }) => <TabIconOverview color={color} size={TAB_ICON} />,
+        }}
+      />
       <Tab.Screen
         name="Products"
-        children={() => (
-          <ModulePlaceholderScreen
-            title="Products"
-            description="Catalog list and editing will be added in the next step."
-          />
-        )}
+        children={() => <ModuleComingSoonScreen module="products" />}
+        options={{
+          title: "Products",
+          tabBarIcon: ({ color }) => <TabIconProducts color={color} size={TAB_ICON} />,
+        }}
       />
       <Tab.Screen
         name="Orders"
-        children={() => (
-          <ModulePlaceholderScreen
-            title="Orders"
-            description="Order management will be added after products."
-          />
-        )}
+        children={() => <ModuleComingSoonScreen module="orders" />}
+        options={{
+          title: "Orders",
+          tabBarIcon: ({ color }) => <TabIconOrders color={color} size={TAB_ICON} />,
+        }}
       />
-      <Tab.Screen name="More" component={MoreScreen} options={{ title: "More" }} />
+      <Tab.Screen
+        name="More"
+        component={MoreScreen}
+        options={{
+          title: "More",
+          tabBarIcon: ({ color }) => <TabIconMore color={color} size={TAB_ICON} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }

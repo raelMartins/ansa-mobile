@@ -1,92 +1,123 @@
+/**
+ * Motion: section cards FadeInDown; rows static; sign-out press opacity.
+ * Reduced motion: Reanimated entering respects system preference.
+ */
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useTheme } from "../../core/ui/ThemeContext";
 import { useThemedStyles } from "../../core/ui/themedStyles";
 import { resetWelcomeFlow, resetWelcomeFlowAndSignOut } from "../../core/onboarding/onboardingStorage";
 import { requestWelcomeReplay } from "../../experience/replay";
 import { useSession } from "../../core/session/SessionContext";
+import { MerchantCard } from "../ui/MerchantCard";
+import { MerchantScreenHeader } from "../ui/MerchantScreenHeader";
+import { SoonPill } from "../ui/SoonPill";
+import { merchantRadii } from "../ui/merchantUi";
 
 const FUTURE = [
-  { title: "Customers", note: "Order history by customer — coming soon." },
-  { title: "Storefront", note: "Manage how buyers see your storefront — coming soon." },
-  { title: "Social", note: "Publish catalog to social channels — coming soon." },
-  { title: "WhatsApp", note: "Order notifications and buyer chat — coming soon." },
-  { title: "Settings", note: "Business and account settings — coming soon." },
+  { title: "Customers", note: "Order history by buyer" },
+  { title: "Storefront", note: "Theme and public shop page" },
+  { title: "Social", note: "Publish catalog to channels" },
+  { title: "WhatsApp", note: "Orders and buyer updates" },
+  { title: "Settings", note: "Business and account" },
 ];
+
+function MenuRow({ title, note }: { title: string; note: string }) {
+  const styles = useThemedStyles((c, f) => ({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    textWrap: { flex: 1, gap: 2 },
+    title: { fontSize: 16, fontFamily: f.semiBold, color: c.text },
+    note: { fontSize: 14, fontFamily: f.regular, color: c.textMuted, lineHeight: 19 },
+    chevron: { fontSize: 18, color: c.textMuted, fontFamily: f.regular },
+  }));
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.textWrap}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.note}>{note}</Text>
+      </View>
+      <SoonPill />
+      <Text style={styles.chevron} accessibilityElementsHidden>›</Text>
+    </View>
+  );
+}
 
 export function MoreScreen() {
   const { signOut } = useSession();
   const { scheme, setScheme, colors } = useTheme();
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, gap: 12, paddingBottom: 40 },
-    heading: { fontSize: 22, fontFamily: f.semiBold, color: c.text, marginBottom: 8 },
+    content: { padding: 20, gap: 16, paddingBottom: 44 },
     themeRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingVertical: 14,
-      borderBottomWidth: 1,
-      borderBottomColor: c.border,
       gap: 12,
     },
-    themeLabel: { fontSize: 17, fontFamily: f.medium, color: c.text },
-    themeNote: { fontSize: 14, fontFamily: f.regular, color: c.textMuted, marginTop: 2 },
-    row: {
-      paddingVertical: 14,
-      borderBottomWidth: 1,
-      borderBottomColor: c.border,
-      gap: 4,
-    },
-    rowTitle: { fontSize: 17, fontFamily: f.medium, color: c.text },
-    rowNote: { fontSize: 14, fontFamily: f.regular, color: c.textMuted, lineHeight: 20 },
+    themeLabel: { fontSize: 16, fontFamily: f.semiBold, color: c.text },
+    themeNote: { fontSize: 14, fontFamily: f.regular, color: c.textMuted, marginTop: 4, lineHeight: 19 },
     signOut: {
-      marginTop: 24,
-      borderWidth: 1,
+      marginTop: 8,
+      borderWidth: 1.5,
       borderColor: c.border,
-      borderRadius: 8,
-      paddingVertical: 14,
+      borderRadius: merchantRadii.button,
+      paddingVertical: 15,
       alignItems: "center",
-      minHeight: 48,
+      minHeight: 52,
       justifyContent: "center",
+      backgroundColor: c.bg,
     },
+    signOutPressed: { opacity: 0.85 },
     signOutText: { color: c.text, fontSize: 16, fontFamily: f.semiBold },
     devBtn: {
-      marginTop: 12,
-      borderRadius: 8,
+      borderRadius: merchantRadii.button,
       paddingVertical: 12,
       paddingHorizontal: 14,
       borderWidth: 1,
       borderColor: c.border,
       alignItems: "center",
+      borderStyle: "dashed",
     },
-    devText: { color: c.textMuted, fontSize: 14, fontFamily: f.medium },
+    devText: { color: c.textMuted, fontSize: 13, fontFamily: f.medium },
+    devBlock: { gap: 10, marginTop: 4 },
   }));
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>More</Text>
+    <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <MerchantScreenHeader title="More" subtitle="Preferences and tools for your merchant workspace." />
 
-      <View style={styles.themeRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.themeLabel}>Dark mode</Text>
-          <Text style={styles.themeNote}>Warm light is the default</Text>
+      <MerchantCard title="Appearance" delay={80}>
+        <View style={styles.themeRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.themeLabel}>Dark mode</Text>
+            <Text style={styles.themeNote}>Warm light is the default for selling during the day.</Text>
+          </View>
+          <Switch
+            value={scheme === "dark"}
+            onValueChange={(dark) => setScheme(dark ? "dark" : "light")}
+            trackColor={{ false: colors.border, true: colors.accent }}
+            thumbColor={scheme === "dark" ? colors.onAccent : colors.surface}
+          />
         </View>
-        <Switch
-          value={scheme === "dark"}
-          onValueChange={(dark) => setScheme(dark ? "dark" : "light")}
-          trackColor={{ false: colors.border, true: colors.accent }}
-          thumbColor={scheme === "dark" ? colors.onAccent : colors.surface}
-        />
-      </View>
+      </MerchantCard>
 
-      {FUTURE.map((item) => (
-        <View key={item.title} style={styles.row}>
-          <Text style={styles.rowTitle}>{item.title}</Text>
-          <Text style={styles.rowNote}>{item.note}</Text>
-        </View>
-      ))}
+      <MerchantCard title="Workspace" delay={140}>
+        {FUTURE.map((item) => (
+          <MenuRow key={item.title} title={item.title} note={item.note} />
+        ))}
+      </MerchantCard>
+
       {__DEV__ ? (
-        <>
+        <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.devBlock}>
           <Pressable
             style={styles.devBtn}
             onPress={() => {
@@ -105,11 +136,18 @@ export function MoreScreen() {
           >
             <Text style={styles.devText}>Sign out & replay from splash (dev)</Text>
           </Pressable>
-        </>
+        </Animated.View>
       ) : null}
-      <Pressable style={styles.signOut} onPress={() => void signOut()} accessibilityRole="button">
-        <Text style={styles.signOutText}>Sign out</Text>
-      </Pressable>
+
+      <Animated.View entering={FadeInDown.delay(260).duration(420)}>
+        <Pressable
+          style={({ pressed }) => [styles.signOut, pressed && styles.signOutPressed]}
+          onPress={() => void signOut()}
+          accessibilityRole="button"
+        >
+          <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
+      </Animated.View>
     </ScrollView>
   );
 }
