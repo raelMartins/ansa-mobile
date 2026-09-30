@@ -5,6 +5,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-g
 import Animated, {
   FadeIn,
   runOnJS,
+  runOnUI,
   useAnimatedStyle,
   useFrameCallback,
   useSharedValue,
@@ -16,12 +17,13 @@ import { ANSA_PRODUCTS, type AnsaProductOption } from "../core/onboarding/produc
 import { BrandInline } from "../core/ui/BrandInline";
 import { brand } from "../core/ui/brandColors";
 import { fontFamily } from "../core/ui/theme";
-import { initialBubbleVelocity, stepBubblePhysics } from "./bubblePhysics";
+import { stepBubblePhysics } from "./bubblePhysics";
+import { publishBubblePositions, seedBubbleSimulation, setBubblePositionAt } from "./bubbleSimShared";
 import { ProductBubbleIcon } from "./ProductBubbleIcon";
 
 const { width: W } = Dimensions.get("window");
 const TITLE_SIZE = 30;
-const BASE_DIAMETER = Math.min(W, 700) * 0.38;
+const BASE_DIAMETER = Math.min(W, 700) * 0.32;
 const BUBBLE_COUNT = ANSA_PRODUCTS.length;
 const BUBBLE_RADII = ANSA_PRODUCTS.map((p) => (BASE_DIAMETER * p.scale) / 2);
 
@@ -67,8 +69,12 @@ function ProductBubble({
       dragIndex.value = index;
       dragStartX.value = cx.value[index];
       dragStartY.value = cy.value[index];
-      vx.value[index] = 0;
-      vy.value[index] = 0;
+      const zvx = vx.value.slice();
+      const zvy = vy.value.slice();
+      zvx[index] = 0;
+      zvy[index] = 0;
+      vx.value = zvx;
+      vy.value = zvy;
     })
     .onUpdate((e) => {
       const r = radius;
@@ -78,12 +84,15 @@ function ProductBubble({
       let ny = dragStartY.value + e.translationY;
       nx = Math.max(r, Math.min(w - r, nx));
       ny = Math.max(r, Math.min(h - r, ny));
-      cx.value[index] = nx;
-      cy.value[index] = ny;
+      setBubblePositionAt(cx, cy, index, nx, ny);
     })
     .onEnd((e) => {
-      vx.value[index] = e.velocityX * 0.45;
-      vy.value[index] = e.velocityY * 0.45;
+      const nextVx = vx.value.slice();
+      const nextVy = vy.value.slice();
+      nextVx[index] = e.velocityX * 0.45;
+      nextVy[index] = e.velocityY * 0.45;
+      vx.value = nextVx;
+      vy.value = nextVy;
       dragIndex.value = -1;
     })
     .onFinalize(() => {
@@ -100,8 +109,10 @@ function ProductBubble({
   const gesture = Gesture.Exclusive(pan, tap);
 
   const anim = useAnimatedStyle(() => {
-    const x = cx.value[index] - radius;
-    const y = cy.value[index] - radius;
+    const centersX = cx.value;
+    const centersY = cy.value;
+    const x = centersX[index] - radius;
+    const y = centersY[index] - radius;
     return {
       left: x,
       top: y,
@@ -153,31 +164,35 @@ export function ProductPickerScreen({ onSelect }: Props) {
 
   const fieldW = useSharedValue(W);
   const fieldH = useSharedValue(FIELD_MIN_H);
-  const cx = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(W / 2));
-  const cy = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(FIELD_MIN_H / 2));
+  const cx = useSharedValue<number[]>(ANSA_PRODUCTS.map((p) => p.x * W));
+  const cy = useSharedValue<number[]>(ANSA_PRODUCTS.map((p) => p.y * FIELD_MIN_H));
   const vx = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(0));
   const vy = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(0));
+  const simReady = useSharedValue(0);
   const dragIndex = useSharedValue(-1);
   const dragStartX = useSharedValue(0);
   const dragStartY = useSharedValue(0);
 
-  const layoutField = useCallback((w: number, h: number) => {
-    fieldW.value = w;
-    fieldH.value = h;
-    if (initialized.current) return;
-    initialized.current = true;
-    for (let i = 0; i < BUBBLE_COUNT; i++) {
-      const p = ANSA_PRODUCTS[i];
-      cx.value[i] = p.x * w;
-      cy.value[i] = p.y * h;
-      const vel = initialBubbleVelocity(p.driftPhase);
-      vx.value[i] = vel.vx;
-      vy.value[i] = vel.vy;
-    }
-  }, [cx, cy, vx, vy, fieldW, fieldH]);
+  const layoutField = useCallback(
+    (w: number, h: number) => {
+      if (h < 80) return;
+      fieldW.value = w;
+      fieldH.value = h;
+      if (initialized.current) return;
+      initialized.current = true;
+
+      const anchorX = ANSA_PRODUCTS.map((p) => p.x * w);
+      const anchorY = ANSA_PRODUCTS.map((p) => p.y * h);
+      const phases = ANSA_PRODUCTS.map((p) => p.driftPhase);
+
+      runOnUI(seedBubbleSimulation)(cx, cy, vx, vy, anchorX, anchorY, phases, BUBBLE_RADII, w, h, simReady);
+    },
+    [cx, cy, vx, vy, fieldW, fieldH, simReady],
+  );
 
   useFrameCallback((frame) => {
     "worklet";
+    if (simReady.value === 0) return;
     const dt = Math.min((frame.timeSincePreviousFrame ?? 16) / 1000, 0.032);
     stepBubblePhysics(
       { cx: cx.value, cy: cy.value, vx: vx.value, vy: vy.value },
@@ -187,6 +202,7 @@ export function ProductPickerScreen({ onSelect }: Props) {
       dragIndex.value,
       dt,
     );
+    publishBubblePositions(cx, cy);
   });
 
   const handleTap = useCallback(
@@ -255,8 +271,8 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "center",
-    gap: 10,
+    alignItems: "baseline",
+    gap: 8,
   },
   title: {
     color: brand.forest,

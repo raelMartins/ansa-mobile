@@ -208,3 +208,51 @@ export function initialBubbleVelocity(phase: number): { vx: number; vy: number }
     vy: Math.sin(phase * 1.3) * speed,
   };
 }
+
+/** Push overlapping circles apart (zero velocity, no integration). */
+export function separateBubbles(
+  state: BubblePhysicsState,
+  radii: number[],
+  fieldW: number,
+  fieldH: number,
+  iterations = 14,
+): void {
+  "worklet";
+  const n = radii.length;
+  if (fieldW <= 0 || fieldH <= 0 || n === 0) return;
+
+  const cx = state.cx;
+  const cy = state.cy;
+  const vx = state.vx;
+  const vy = state.vy;
+
+  for (let pass = 0; pass < iterations; pass++) {
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const pair = resolvePair(
+          cx[i],
+          cy[i],
+          vx[i],
+          vy[i],
+          radii[i],
+          cx[j],
+          cy[j],
+          vx[j],
+          vy[j],
+          radii[j],
+          false,
+          false,
+        );
+        cx[i] = pair.xi;
+        cy[i] = pair.yi;
+        cx[j] = pair.xj;
+        cy[j] = pair.yj;
+      }
+    }
+    for (let i = 0; i < n; i++) {
+      const wall = resolveWall(cx[i], cy[i], 0, 0, radii[i], fieldW, fieldH);
+      cx[i] = wall.x;
+      cy[i] = wall.y;
+    }
+  }
+}
