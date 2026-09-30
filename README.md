@@ -1,6 +1,14 @@
-# ansa mobile (merchant)
+# ansa mobile
 
-Expo React Native application for the **ansa merchant** experience. Consumes `ansa-api` at `/v1`.
+Expo React Native **consumer ansa app** (ecosystem shell). **Merchant** is the first active product; Jobs, Delivery, Check, and others appear in the product picker as they ship. Consumes `ansa-api` at `/v1`.
+
+## Welcome flow
+
+Cold start: **splash → ecosystem slideshow → sign in / sign up → product picker → merchant** (expansion transition into the dashboard).
+
+**Replay the full flow (dev):** More → **Sign out & replay from splash** — or **Replay welcome flow** while signed in (re-shows intro + product picker; sign out first if you need auth screens again).
+
+Restart Metro with `pnpm start:clean` after installing native deps (`react-native-reanimated`).
 
 ## Prerequisites
 

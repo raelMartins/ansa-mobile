@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { errorMessage } from "../../../core/api/errors";
 import { Field, PrimaryButton } from "../../../core/ui/form";
+import { BrandInline } from "../../../core/ui/BrandInline";
 import { Wordmark } from "../../../core/ui/Wordmark";
 import { useThemedStyles } from "../../../core/ui/themedStyles";
 import { useSession } from "../../../core/session/SessionContext";
@@ -113,14 +114,18 @@ export function CreateShopScreen({ existingMerchant, onComplete }: Props) {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.brand}>
-            <Wordmark height={17} />
+            <Wordmark height={17} badge={false} />
           </View>
           <Text style={styles.title}>{existingMerchant ? "Finish setup" : "Set up your business"}</Text>
-          <Text style={styles.subtitle}>
-            {existingMerchant
-              ? "Complete your profile to open the merchant dashboard."
-              : "Create your business on ansa. You can add more details later."}
-          </Text>
+          {existingMerchant ? (
+            <Text style={styles.subtitle}>Complete your profile to open the merchant dashboard.</Text>
+          ) : (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+              <Text style={styles.subtitle}>Create your business on</Text>
+              <BrandInline height={14} />
+              <Text style={styles.subtitle}>— add more details later.</Text>
+            </View>
+          )}
 
           {formError ? <Text style={styles.formError}>{formError}</Text> : null}
 

@@ -1,37 +1,5 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { MerchantBootstrapGate } from "../../merchant/MerchantBootstrapGate";
-import { MerchantProvider } from "../../merchant/MerchantContext";
-import { useSession } from "../session/SessionContext";
-import { useTheme } from "../ui/ThemeContext";
-import { AuthStack } from "./AuthStack";
+import { AppExperienceFlow } from "../../experience/AppExperienceFlow";
 
 export function RootNavigator() {
-  const { status } = useSession();
-  const { colors } = useTheme();
-  const styles = StyleSheet.create({
-    boot: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.bg,
-    },
-  });
-
-  if (status === "loading") {
-    return (
-      <View style={styles.boot}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </View>
-    );
-  }
-
-  if (status === "authenticated") {
-    return (
-      <MerchantProvider>
-        <MerchantBootstrapGate />
-      </MerchantProvider>
-    );
-  }
-
-  return <AuthStack />;
+  return <AppExperienceFlow />;
 }

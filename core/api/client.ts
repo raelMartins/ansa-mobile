@@ -77,7 +77,7 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
     try {
       res = await fetchFn(`${deps.getBaseUrl()}${path}`, { ...init, headers });
     } catch {
-      throw new ApiError(0, "NETWORK", "Can't reach ansa right now. Check your connection and that the API is running.");
+      throw new ApiError(0, "NETWORK", "Can't reach us right now. Check your connection and that the API is running.");
     }
 
     const json = (await res.json().catch(() => ({}))) as ApiEnvelope<T>;

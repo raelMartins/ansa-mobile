@@ -1,18 +1,11 @@
 import { useState } from "react";
-import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
+import { Keyboard, Text, TouchableWithoutFeedback, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ApiError } from "../../core/api/errors";
 import { errorMessage } from "../../core/api/errors";
+import { AuthShell } from "../../core/ui/AuthShell";
+import { BrandInline } from "../../core/ui/BrandInline";
 import { Field, PrimaryButton, TextLink } from "../../core/ui/form";
-import { Wordmark } from "../../core/ui/Wordmark";
 import { useThemedStyles } from "../../core/ui/themedStyles";
 import { useSession } from "../../core/session/SessionContext";
 import type { AuthStackParamList } from "../../core/navigation/types";
@@ -23,13 +16,10 @@ type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 
 export function SignUpScreen({ navigation }: Props) {
   const styles = useThemedStyles((c, f) => ({
-    root: { flex: 1, backgroundColor: c.bg },
-    scroll: { flexGrow: 1, padding: 24, paddingTop: 48, gap: 16 },
-    brand: { marginBottom: 20 },
-    header: { marginBottom: 8, gap: 8 },
-    title: { fontSize: 28, fontFamily: f.semiBold, color: c.text },
-    subtitle: { fontSize: 16, fontFamily: f.regular, lineHeight: 22, color: c.textMuted },
-    formError: { color: c.error, fontSize: 15, fontFamily: f.regular, marginBottom: 4 },
+    header: { gap: 6, marginBottom: 4 },
+    title: { fontSize: 26, fontFamily: f.semiBold, color: c.text },
+    subtitle: { fontSize: 15, fontFamily: f.regular, lineHeight: 21, color: c.textMuted },
+    formError: { color: c.error, fontSize: 15, fontFamily: f.regular },
   }));
   const { api, establishSession } = useSession();
   const [email, setEmail] = useState("");
@@ -68,15 +58,16 @@ export function SignUpScreen({ navigation }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <AuthShell>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.brand}>
-            <Wordmark height={17} />
-          </View>
+        <View style={{ gap: 14 }}>
           <View style={styles.header}>
             <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>One ansa identity for your business.</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+              <Text style={styles.subtitle}>One</Text>
+              <BrandInline height={14} />
+              <Text style={styles.subtitle}>ID for merchant, jobs, delivery, and more.</Text>
+            </View>
           </View>
 
           {formError ? <Text style={styles.formError}>{formError}</Text> : null}
@@ -114,9 +105,8 @@ export function SignUpScreen({ navigation }: Props) {
           <PrimaryButton label="Create account" onPress={() => void onSubmit()} loading={busy} />
 
           <TextLink label="Already have an account? Sign in" onPress={() => navigation.navigate("SignIn")} />
-        </ScrollView>
+        </View>
       </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+    </AuthShell>
   );
 }
-

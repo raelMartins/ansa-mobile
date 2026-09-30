@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { useTheme } from "../../core/ui/ThemeContext";
 import { useThemedStyles } from "../../core/ui/themedStyles";
+import { resetWelcomeFlow, resetWelcomeFlowAndSignOut } from "../../core/onboarding/onboardingStorage";
+import { requestWelcomeReplay } from "../../experience/replay";
 import { useSession } from "../../core/session/SessionContext";
 
 const FUTURE = [
@@ -48,6 +50,16 @@ export function MoreScreen() {
       justifyContent: "center",
     },
     signOutText: { color: c.text, fontSize: 16, fontFamily: f.semiBold },
+    devBtn: {
+      marginTop: 12,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: "center",
+    },
+    devText: { color: c.textMuted, fontSize: 14, fontFamily: f.medium },
   }));
 
   return (
@@ -73,6 +85,28 @@ export function MoreScreen() {
           <Text style={styles.rowNote}>{item.note}</Text>
         </View>
       ))}
+      {__DEV__ ? (
+        <>
+          <Pressable
+            style={styles.devBtn}
+            onPress={() => {
+              void resetWelcomeFlow().then(() => requestWelcomeReplay());
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={styles.devText}>Replay welcome flow (dev)</Text>
+          </Pressable>
+          <Pressable
+            style={styles.devBtn}
+            onPress={() => {
+              void resetWelcomeFlowAndSignOut(() => signOut()).then(() => requestWelcomeReplay());
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={styles.devText}>Sign out & replay from splash (dev)</Text>
+          </Pressable>
+        </>
+      ) : null}
       <Pressable style={styles.signOut} onPress={() => void signOut()} accessibilityRole="button">
         <Text style={styles.signOutText}>Sign out</Text>
       </Pressable>

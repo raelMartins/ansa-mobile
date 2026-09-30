@@ -7,3 +7,23 @@ export const WORDMARK_PATH =
 const [, , vbW, vbH] = WORDMARK_VIEW_BOX.split(" ").map(Number);
 
 export const WORDMARK_ASPECT = vbW / vbH;
+
+/** Four subpaths (a · n · s · a), left to right — split on moveto boundaries. */
+export function splitWordmarkIntoLetters(path: string): string[] {
+  const cuts: number[] = [];
+  const re = /\s+(?=M)/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(path)) !== null) {
+    cuts.push(match.index + 1);
+  }
+  if (cuts.length === 0) {
+    return [path];
+  }
+  const letters = [path.slice(0, cuts[0])];
+  for (let i = 0; i < cuts.length; i++) {
+    letters.push(path.slice(cuts[i], cuts[i + 1] ?? path.length));
+  }
+  return letters;
+}
+
+export const WORDMARK_LETTER_PATHS = splitWordmarkIntoLetters(WORDMARK_PATH);
