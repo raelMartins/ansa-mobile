@@ -1,3 +1,7 @@
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import { Platform } from "react-native";
+
 export class ConfigurationError extends Error {
   readonly code = "CONFIGURATION_ERROR";
 
@@ -7,9 +11,18 @@ export class ConfigurationError extends Error {
   }
 }
 
+function lanHostFromMetro(): string | null {
+  const debuggerHost = Constants.expoGoConfig?.debuggerHost;
+  if (!debuggerHost) {
+    return null;
+  }
+  const host = debuggerHost.split(":")[0]?.trim();
+  return host || null;
+}
+
 /**
- * API base URL from Expo public env (no trailing slash).
- * Must be set in `.env` — never hard-code localhost in application code.
+ * API base URL (no trailing slash).
+ * In dev, resolves emulator vs physical device automatically so `.env` can stay simple.
  */
 export function getApiBaseUrl(): string {
   const raw = process.env.EXPO_PUBLIC_API_URL?.trim();
@@ -18,5 +31,24 @@ export function getApiBaseUrl(): string {
       "EXPO_PUBLIC_API_URL is not set. Copy .env.example to .env and set your API URL (see README.md).",
     );
   }
-  return raw.replace(/\/+$/, "");
+
+  const configured = raw.replace(/\/+$/, "");
+
+  if (!__DEV__) {
+    return configured;
+  }
+
+  if (!Device.isDevice) {
+    if (Platform.OS === "android") {
+      return "http://10.0.2.2:5000";
+    }
+    return "http://localhost:5000";
+  }
+
+  const lan = lanHostFromMetro();
+  if (lan) {
+    return `http://${lan}:5000`;
+  }
+
+  return configured;
 }

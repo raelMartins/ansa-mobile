@@ -2,11 +2,20 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { MerchantBootstrapGate } from "../../merchant/MerchantBootstrapGate";
 import { MerchantProvider } from "../../merchant/MerchantContext";
 import { useSession } from "../session/SessionContext";
-import { colors } from "../ui/theme";
+import { useTheme } from "../ui/ThemeContext";
 import { AuthStack } from "./AuthStack";
 
 export function RootNavigator() {
   const { status } = useSession();
+  const { colors } = useTheme();
+  const styles = StyleSheet.create({
+    boot: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.bg,
+    },
+  });
 
   if (status === "loading") {
     return (
@@ -26,12 +35,3 @@ export function RootNavigator() {
 
   return <AuthStack />;
 }
-
-const styles = StyleSheet.create({
-  boot: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-  },
-});

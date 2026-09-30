@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableWithoutFeedback,
   View,
@@ -13,7 +12,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ApiError } from "../../core/api/errors";
 import { errorMessage } from "../../core/api/errors";
 import { Field, PrimaryButton, TextLink } from "../../core/ui/form";
-import { colors } from "../../core/ui/theme";
+import { useThemedStyles } from "../../core/ui/themedStyles";
 import { useSession } from "../../core/session/SessionContext";
 import type { AuthStackParamList } from "../../core/navigation/types";
 import { signUp } from "../api/auth";
@@ -22,6 +21,14 @@ import { validateEmail, validatePassword } from "../credentials";
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 
 export function SignUpScreen({ navigation }: Props) {
+  const styles = useThemedStyles((c, f) => ({
+    root: { flex: 1, backgroundColor: c.bg },
+    scroll: { flexGrow: 1, padding: 24, paddingTop: 48, gap: 16 },
+    header: { marginBottom: 8, gap: 8 },
+    title: { fontSize: 28, fontFamily: f.semiBold, color: c.text },
+    subtitle: { fontSize: 16, fontFamily: f.regular, lineHeight: 22, color: c.textMuted },
+    formError: { color: c.error, fontSize: 15, fontFamily: f.regular, marginBottom: 4 },
+  }));
   const { api, establishSession } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -108,34 +115,3 @@ export function SignUpScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  scroll: {
-    flexGrow: 1,
-    padding: 24,
-    paddingTop: 48,
-    gap: 16,
-  },
-  header: {
-    marginBottom: 8,
-    gap: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: colors.textMuted,
-  },
-  formError: {
-    color: colors.error,
-    fontSize: 15,
-    marginBottom: 4,
-  },
-});

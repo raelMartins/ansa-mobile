@@ -4,14 +4,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
+  TextStyle,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { errorMessage } from "../../../core/api/errors";
 import { Field, PrimaryButton } from "../../../core/ui/form";
-import { colors } from "../../../core/ui/theme";
+import { useThemedStyles } from "../../../core/ui/themedStyles";
 import { useSession } from "../../../core/session/SessionContext";
 import { createMerchant, updateMerchant } from "../../api/merchant";
 import { useMerchant } from "../../MerchantContext";
@@ -25,6 +25,32 @@ type Props = {
 };
 
 export function CreateShopScreen({ existingMerchant, onComplete }: Props) {
+  const styles = useThemedStyles((c, f) => ({
+    root: { flex: 1, backgroundColor: c.bg },
+    scroll: { flexGrow: 1, padding: 24, paddingTop: 40, gap: 16 },
+    title: { fontSize: 26, fontFamily: f.semiBold, color: c.text },
+    subtitle: { fontSize: 16, fontFamily: f.regular, lineHeight: 22, color: c.textMuted, marginBottom: 8 },
+    formError: { color: c.error, fontSize: 15, fontFamily: f.regular },
+    label: { color: c.text, fontSize: 15, fontFamily: f.medium, marginBottom: 8 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    chip: {
+      borderWidth: 1,
+      borderColor: c.border,
+      color: c.textMuted,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      fontSize: 14,
+      fontFamily: f.regular,
+    },
+    chipSelected: {
+      borderColor: c.accent,
+      color: c.text,
+      backgroundColor: c.surface,
+    },
+    fieldError: { color: c.error, fontSize: 13, fontFamily: f.regular, marginTop: 6 },
+  }));
+
   const { api } = useSession();
   const { setMerchant } = useMerchant();
   const [name, setName] = useState("");
@@ -103,7 +129,15 @@ export function CreateShopScreen({ existingMerchant, onComplete }: Props) {
             <Text style={styles.label}>Category</Text>
             <View style={styles.chips}>
               {CATEGORIES.map((c) => (
-                <PrimaryChip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} disabled={busy} />
+                <PrimaryChip
+                  key={c}
+                  label={c}
+                  selected={category === c}
+                  onPress={() => setCategory(c)}
+                  disabled={busy}
+                  baseStyle={styles.chip}
+                  selectedStyle={styles.chipSelected}
+                />
               ))}
             </View>
             {fieldErrors.category ? <Text style={styles.fieldError}>{fieldErrors.category}</Text> : null}
@@ -137,44 +171,23 @@ function PrimaryChip({
   selected,
   onPress,
   disabled,
+  baseStyle,
+  selectedStyle,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
   disabled?: boolean;
+  baseStyle: TextStyle;
+  selectedStyle: TextStyle;
 }) {
   return (
     <Text
       onPress={disabled ? undefined : onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
+      style={[baseStyle, selected && selectedStyle]}
       accessibilityRole="button"
     >
       {label}
     </Text>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  scroll: { flexGrow: 1, padding: 24, paddingTop: 40, gap: 16 },
-  title: { fontSize: 26, fontWeight: "600", color: colors.text },
-  subtitle: { fontSize: 16, lineHeight: 22, color: colors.textMuted, marginBottom: 8 },
-  formError: { color: colors.error, fontSize: 15 },
-  label: { color: colors.text, fontSize: 15, fontWeight: "500", marginBottom: 8 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.textMuted,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    fontSize: 14,
-  },
-  chipSelected: {
-    borderColor: colors.accent,
-    color: colors.text,
-    backgroundColor: colors.surface,
-  },
-  fieldError: { color: colors.error, fontSize: 13, marginTop: 6 },
-});

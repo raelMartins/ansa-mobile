@@ -11,15 +11,19 @@ Expo React Native application for the **ansa merchant** experience. Consumes `an
 
 ## Configuration
 
-Copy `.env.example` to `.env` and set **`EXPO_PUBLIC_API_URL`**. Do not hard-code `localhost` in source — use the value appropriate for how you run the app:
+Copy `.env.example` to `.env` and set **`EXPO_PUBLIC_API_URL`** (any placeholder is fine in dev).
 
-| Environment | Typical `EXPO_PUBLIC_API_URL` |
-|-------------|-------------------------------|
+In **development**, `getApiBaseUrl()` resolves automatically:
+
+| How you run the app | API target |
+|---------------------|------------|
+| **Physical phone** (Expo Go, same Wi‑Fi as PC) | `http://<Metro-LAN-IP>:5000` (same IP as the QR code, port **5000**) |
 | Android emulator | `http://10.0.2.2:5000` |
-| Physical device (same LAN) | `http://<your-PC-LAN-IP>:5000` |
 | iOS simulator | `http://localhost:5000` |
 
-Restart the Expo dev server after changing `.env`.
+Ensure **`pnpm api:dev`** is running and **Docker Postgres** is up (`pnpm docker:up`). Allow port **5000** through Windows Firewall for private networks if the phone cannot connect.
+
+Restart Expo after changing `.env` (`pnpm start:clean` if needed).
 
 ## Scripts
 

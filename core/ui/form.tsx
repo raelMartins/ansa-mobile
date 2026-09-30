@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
-import { colors } from "./theme";
+import type { ThemeColors } from "./theme";
+import { fontFamily } from "./theme";
+import { useTheme } from "./ThemeContext";
 
 type FieldProps = {
   label: string;
@@ -9,6 +11,9 @@ type FieldProps = {
 };
 
 export function Field({ label, hint, error, inputProps }: FieldProps) {
+  const { colors, fonts } = useTheme();
+  const styles = createStyles(colors, fonts);
+
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -31,7 +36,10 @@ type PrimaryButtonProps = {
 };
 
 export function PrimaryButton({ label, onPress, disabled, loading }: PrimaryButtonProps) {
+  const { colors, fonts } = useTheme();
+  const styles = createStyles(colors, fonts);
   const isDisabled = disabled || loading;
+
   return (
     <Pressable
       style={[styles.button, isDisabled && styles.buttonDisabled]}
@@ -46,6 +54,9 @@ export function PrimaryButton({ label, onPress, disabled, loading }: PrimaryButt
 }
 
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
+  const { colors, fonts } = useTheme();
+  const styles = createStyles(colors, fonts);
+
   return (
     <Pressable onPress={onPress} style={styles.linkHit} accessibilityRole="button">
       <Text style={styles.link}>{label}</Text>
@@ -53,61 +64,66 @@ export function TextLink({ label, onPress }: { label: string; onPress: () => voi
   );
 }
 
-const styles = StyleSheet.create({
-  field: {
-    gap: 6,
-  },
-  label: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  hint: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  input: {
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: colors.text,
-    minHeight: 48,
-  },
-  inputError: {
-    borderColor: colors.error,
-  },
-  error: {
-    color: colors.error,
-    fontSize: 13,
-  },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: "center",
-    minHeight: 48,
-    justifyContent: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: colors.bg,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  link: {
-    color: colors.accent,
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  linkHit: {
-    paddingVertical: 8,
-    minHeight: 44,
-    justifyContent: "center",
-  },
-});
+function createStyles(colors: ThemeColors, fonts: typeof fontFamily) {
+  return StyleSheet.create({
+    field: {
+      gap: 6,
+    },
+    label: {
+      color: colors.text,
+      fontSize: 15,
+      fontFamily: fonts.medium,
+    },
+    hint: {
+      color: colors.textMuted,
+      fontSize: 13,
+      fontFamily: fonts.regular,
+    },
+    input: {
+      backgroundColor: colors.inputBg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 16,
+      fontFamily: fonts.regular,
+      color: colors.text,
+      minHeight: 48,
+    },
+    inputError: {
+      borderColor: colors.error,
+    },
+    error: {
+      color: colors.error,
+      fontSize: 13,
+      fontFamily: fonts.regular,
+    },
+    button: {
+      backgroundColor: colors.accent,
+      borderRadius: 8,
+      paddingVertical: 14,
+      alignItems: "center",
+      minHeight: 48,
+      justifyContent: "center",
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonText: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontFamily: fonts.semiBold,
+    },
+    link: {
+      color: colors.accent,
+      fontSize: 15,
+      fontFamily: fonts.medium,
+    },
+    linkHit: {
+      paddingVertical: 8,
+      minHeight: 44,
+      justifyContent: "center",
+    },
+  });
+}

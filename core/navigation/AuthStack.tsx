@@ -1,12 +1,14 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SignInScreen } from "../../identity/screens/SignInScreen";
 import { SignUpScreen } from "../../identity/screens/SignUpScreen";
-import { colors } from "../ui/theme";
+import { useTheme } from "../ui/ThemeContext";
 import type { AuthStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export function AuthStack() {
+  const { colors } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{

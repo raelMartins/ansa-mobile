@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors } from "../../core/ui/theme";
+import { Text, View } from "react-native";
+import { useThemedStyles } from "../../core/ui/themedStyles";
 
 type Props = {
   title: string;
@@ -7,6 +7,27 @@ type Props = {
 };
 
 export function ModulePlaceholderScreen({ title, description }: Props) {
+  const styles = useThemedStyles((c, f) => ({
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      paddingHorizontal: 24,
+      backgroundColor: c.bg,
+    },
+    title: {
+      fontSize: 22,
+      fontFamily: f.semiBold,
+      color: c.text,
+      marginBottom: 8,
+    },
+    body: {
+      fontSize: 16,
+      fontFamily: f.regular,
+      lineHeight: 22,
+      color: c.textMuted,
+    },
+  }));
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
@@ -14,23 +35,3 @@ export function ModulePlaceholderScreen({ title, description }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    backgroundColor: colors.bg,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 8,
-  },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: colors.textMuted,
-  },
-});

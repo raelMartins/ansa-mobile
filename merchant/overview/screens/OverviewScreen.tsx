@@ -1,8 +1,16 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { colors } from "../../../core/ui/theme";
+import { ScrollView, Text, View } from "react-native";
+import { useThemedStyles } from "../../../core/ui/themedStyles";
 import { useMerchant } from "../../MerchantContext";
 
-function Row({ label, value }: { label: string; value: string | null | undefined }) {
+function Row({
+  label,
+  value,
+  styles,
+}: {
+  label: string;
+  value: string | null | undefined;
+  styles: ReturnType<typeof useThemedStyles>;
+}) {
   if (!value) return null;
   return (
     <View style={styles.row}>
@@ -14,6 +22,32 @@ function Row({ label, value }: { label: string; value: string | null | undefined
 
 export function OverviewScreen() {
   const { merchant } = useMerchant();
+  const styles = useThemedStyles((c, f) => ({
+    root: { flex: 1, backgroundColor: c.bg },
+    content: { padding: 20, gap: 16, paddingBottom: 32 },
+    heading: { fontSize: 26, fontFamily: f.semiBold, color: c.text },
+    category: { fontSize: 16, fontFamily: f.regular, color: c.accent, marginTop: -8 },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 16,
+      gap: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    cardTitle: { fontSize: 17, fontFamily: f.semiBold, color: c.text, marginBottom: 4 },
+    row: { gap: 2 },
+    rowLabel: {
+      fontSize: 13,
+      fontFamily: f.medium,
+      color: c.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    rowValue: { fontSize: 16, fontFamily: f.regular, color: c.text, lineHeight: 22 },
+    hint: { fontSize: 14, fontFamily: f.regular, lineHeight: 20, color: c.textMuted, marginTop: 4 },
+  }));
+
   if (!merchant) {
     return null;
   }
@@ -25,15 +59,15 @@ export function OverviewScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Business profile</Text>
-        <Row label="Description" value={merchant.description} />
-        <Row label="Phone" value={merchant.phone} />
-        <Row label="WhatsApp" value={merchant.whatsapp} />
-        <Row label="Location" value={merchant.location} />
+        <Row label="Description" value={merchant.description} styles={styles} />
+        <Row label="Phone" value={merchant.phone} styles={styles} />
+        <Row label="WhatsApp" value={merchant.whatsapp} styles={styles} />
+        <Row label="Location" value={merchant.location} styles={styles} />
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Storefront</Text>
-        <Row label="Public slug" value={merchant.slug} />
+        <Row label="Public slug" value={merchant.slug} styles={styles} />
         <Text style={styles.hint}>
           Your customer storefront lives on ansa web at /shop/{merchant.slug}. Share that link from WhatsApp or social.
         </Text>
@@ -41,23 +75,3 @@ export function OverviewScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, gap: 16, paddingBottom: 32 },
-  heading: { fontSize: 26, fontWeight: "600", color: colors.text },
-  category: { fontSize: 16, color: colors.accent, marginTop: -8 },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardTitle: { fontSize: 17, fontWeight: "600", color: colors.text, marginBottom: 4 },
-  row: { gap: 2 },
-  rowLabel: { fontSize: 13, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.4 },
-  rowValue: { fontSize: 16, color: colors.text, lineHeight: 22 },
-  hint: { fontSize: 14, lineHeight: 20, color: colors.textMuted, marginTop: 4 },
-});
