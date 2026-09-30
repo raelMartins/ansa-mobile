@@ -1,9 +1,10 @@
+import { ANSA_PRODUCTS } from "../core/onboarding/products";
+
 const RESTITUTION = 0.88;
 const DAMPING = 0.998;
 const MAX_SPEED = 220;
 
 function clampSpeed(vx: number, vy: number): { vx: number; vy: number } {
-  "worklet";
   const sp = Math.sqrt(vx * vx + vy * vy);
   if (sp > MAX_SPEED) {
     const s = MAX_SPEED / sp;
@@ -21,7 +22,6 @@ function resolveWall(
   w: number,
   h: number,
 ): { x: number; y: number; vx: number; vy: number } {
-  "worklet";
   let nx = x;
   let ny = y;
   let nvx = vx;
@@ -66,7 +66,6 @@ function resolvePair(
   vxj: number;
   vyj: number;
 } {
-  "worklet";
   const dx = xj - xi;
   const dy = yj - yi;
   const distSq = dx * dx + dy * dy;
@@ -137,7 +136,6 @@ export function stepBubblePhysics(
   draggedIndex: number,
   dt: number,
 ): void {
-  "worklet";
   const n = radii.length;
   if (fieldW <= 0 || fieldH <= 0 || n === 0) return;
 
@@ -209,7 +207,6 @@ export function initialBubbleVelocity(phase: number): { vx: number; vy: number }
   };
 }
 
-/** Push overlapping circles apart (zero velocity, no integration). */
 export function separateBubbles(
   state: BubblePhysicsState,
   radii: number[],
@@ -217,7 +214,6 @@ export function separateBubbles(
   fieldH: number,
   iterations = 14,
 ): void {
-  "worklet";
   const n = radii.length;
   if (fieldW <= 0 || fieldH <= 0 || n === 0) return;
 
@@ -255,4 +251,12 @@ export function separateBubbles(
       cy[i] = wall.y;
     }
   }
+}
+
+export function createBubbleState(fieldW: number, fieldH: number): BubblePhysicsState {
+  const cx = ANSA_PRODUCTS.map((p) => p.x * fieldW);
+  const cy = ANSA_PRODUCTS.map((p) => p.y * fieldH);
+  const vx = ANSA_PRODUCTS.map((p) => initialBubbleVelocity(p.driftPhase).vx);
+  const vy = ANSA_PRODUCTS.map((p) => initialBubbleVelocity(p.driftPhase).vy);
+  return { cx, cy, vx, vy };
 }

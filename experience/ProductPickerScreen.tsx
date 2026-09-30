@@ -1,24 +1,20 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, {
-  FadeIn,
-  runOnJS,
-  runOnUI,
-  useAnimatedStyle,
-  useFrameCallback,
-  useSharedValue,
-  type SharedValue,
-} from "react-native-reanimated";
+import Animated, { FadeIn, makeMutable, useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AnsaProductId } from "../core/onboarding/onboardingStorage";
 import { ANSA_PRODUCTS, type AnsaProductOption } from "../core/onboarding/products";
 import { BrandInline } from "../core/ui/BrandInline";
 import { brand } from "../core/ui/brandColors";
 import { fontFamily } from "../core/ui/theme";
-import { stepBubblePhysics } from "./bubblePhysics";
-import { seedBubbleSimulation, setBubblePositionAt } from "./bubbleSimShared";
+import {
+  createBubbleState,
+  separateBubbles,
+  stepBubblePhysics,
+  type BubblePhysicsState,
+} from "./bubblePhysics";
 import { ProductBubbleIcon } from "./ProductBubbleIcon";
 
 const { width: W } = Dimensions.get("window");
@@ -31,33 +27,30 @@ type Props = {
   onSelect: (product: AnsaProductId, layout: { x: number; y: number; size: number }) => void;
 };
 
+type BubbleMotion = {
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+};
+
 function ProductBubble({
   index,
   product,
   diameter,
-  cx,
-  cy,
-  vx,
-  vy,
-  fieldW,
-  fieldH,
-  dragIndex,
-  dragStartX,
-  dragStartY,
+  motion,
+  fieldSizeRef,
+  simRef,
+  dragIndexRef,
+  dragStartRef,
   onTap,
 }: {
   index: number;
   product: AnsaProductOption;
   diameter: number;
-  cx: SharedValue<number[]>;
-  cy: SharedValue<number[]>;
-  vx: SharedValue<number[]>;
-  vy: SharedValue<number[]>;
-  fieldW: SharedValue<number>;
-  fieldH: SharedValue<number>;
-  dragIndex: SharedValue<number>;
-  dragStartX: SharedValue<number>;
-  dragStartY: SharedValue<number>;
+  motion: BubbleMotion;
+  fieldSizeRef: RefObject<{ w: number; h: number }>;
+  simRef: RefObject<BubblePhysicsState>;
+  dragIndexRef: RefObject<number>;
+  dragStartRef: RefObject<{ x: number; y: number }>;
   onTap: (id: AnsaProductId, centerX: number, centerY: number, size: number) => void;
 }) {
   const radius = diameter / 2;
@@ -65,61 +58,49 @@ function ProductBubble({
   const enabled = product.enabled;
 
   const pan = Gesture.Pan()
+    .runOnJS(true)
     .onStart(() => {
-      dragIndex.value = index;
-      dragStartX.value = cx.value[index];
-      dragStartY.value = cy.value[index];
-      const zvx = vx.value.slice();
-      const zvy = vy.value.slice();
-      zvx[index] = 0;
-      zvy[index] = 0;
-      vx.value = zvx;
-      vy.value = zvy;
+      dragIndexRef.current = index;
+      dragStartRef.current = { x: simRef.current.cx[index], y: simRef.current.cy[index] };
+      simRef.current.vx[index] = 0;
+      simRef.current.vy[index] = 0;
     })
     .onUpdate((e) => {
-      const r = radius;
-      const w = fieldW.value;
-      const h = fieldH.value;
-      let nx = dragStartX.value + e.translationX;
-      let ny = dragStartY.value + e.translationY;
-      nx = Math.max(r, Math.min(w - r, nx));
-      ny = Math.max(r, Math.min(h - r, ny));
-      setBubblePositionAt(cx, cy, index, nx, ny);
+      const { w, h } = fieldSizeRef.current;
+      let nx = dragStartRef.current.x + e.translationX;
+      let ny = dragStartRef.current.y + e.translationY;
+      nx = Math.max(radius, Math.min(w - radius, nx));
+      ny = Math.max(radius, Math.min(h - radius, ny));
+      simRef.current.cx[index] = nx;
+      simRef.current.cy[index] = ny;
+      motion.x.value = nx;
+      motion.y.value = ny;
     })
     .onEnd((e) => {
-      const nextVx = vx.value.slice();
-      const nextVy = vy.value.slice();
-      nextVx[index] = e.velocityX * 0.45;
-      nextVy[index] = e.velocityY * 0.45;
-      vx.value = nextVx;
-      vy.value = nextVy;
-      dragIndex.value = -1;
+      simRef.current.vx[index] = e.velocityX * 0.45;
+      simRef.current.vy[index] = e.velocityY * 0.45;
+      dragIndexRef.current = -1;
     })
     .onFinalize(() => {
-      if (dragIndex.value === index) dragIndex.value = -1;
+      if (dragIndexRef.current === index) dragIndexRef.current = -1;
     });
 
   const tap = Gesture.Tap()
+    .runOnJS(true)
     .maxDuration(280)
     .onEnd(() => {
       if (!enabled) return;
-      runOnJS(onTap)(product.id, cx.value[index], cy.value[index], diameter);
+      onTap(product.id, motion.x.value, motion.y.value, diameter);
     });
 
   const gesture = Gesture.Exclusive(pan, tap);
 
-  const anim = useAnimatedStyle(() => {
-    const centersX = cx.value;
-    const centersY = cy.value;
-    const x = centersX[index] - radius;
-    const y = centersY[index] - radius;
-    return {
-      left: x,
-      top: y,
-      width: diameter,
-      height: diameter,
-    };
-  });
+  const anim = useAnimatedStyle(() => ({
+    left: motion.x.value - radius,
+    top: motion.y.value - radius,
+    width: diameter,
+    height: diameter,
+  }));
 
   return (
     <GestureDetector gesture={gesture}>
@@ -156,69 +137,69 @@ function ProductBubble({
 
 const FIELD_MIN_H = 420;
 
+function useBubbleMotions(): BubbleMotion[] {
+  return useMemo(
+    () =>
+      ANSA_PRODUCTS.map((p) => ({
+        x: makeMutable(p.x * W),
+        y: makeMutable(p.y * FIELD_MIN_H),
+      })),
+    [],
+  );
+}
+
 export function ProductPickerScreen({ onSelect }: Props) {
   const insets = useSafeAreaInsets();
-  const initialized = useRef(false);
+  const motions = useBubbleMotions();
+  const [simReady, setSimReady] = useState(false);
   const fieldWindowY = useRef(0);
   const fieldRef = useRef<View>(null);
+  const fieldSizeRef = useRef({ w: W, h: FIELD_MIN_H });
+  const simRef = useRef<BubblePhysicsState>(createBubbleState(W, FIELD_MIN_H));
+  const dragIndexRef = useRef(-1);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const seededRef = useRef(false);
 
-  const fieldW = useSharedValue(W);
-  const fieldH = useSharedValue(FIELD_MIN_H);
-  const cx = useSharedValue<number[]>(ANSA_PRODUCTS.map((p) => p.x * W));
-  const cy = useSharedValue<number[]>(ANSA_PRODUCTS.map((p) => p.y * FIELD_MIN_H));
-  const vx = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(0));
-  const vy = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(0));
-  const simReady = useSharedValue(0);
-  const dragIndex = useSharedValue(-1);
-  const dragStartX = useSharedValue(0);
-  const dragStartY = useSharedValue(0);
+  const syncMotionsFromSim = useCallback(() => {
+    const sim = simRef.current;
+    for (let i = 0; i < BUBBLE_COUNT; i++) {
+      motions[i].x.value = sim.cx[i];
+      motions[i].y.value = sim.cy[i];
+    }
+  }, [motions]);
 
   const layoutField = useCallback(
     (w: number, h: number) => {
-      if (h < 80) return;
-      fieldW.value = w;
-      fieldH.value = h;
-      if (initialized.current) return;
-      initialized.current = true;
-
-      const anchorX = ANSA_PRODUCTS.map((p) => p.x * w);
-      const anchorY = ANSA_PRODUCTS.map((p) => p.y * h);
-      const phases = ANSA_PRODUCTS.map((p) => p.driftPhase);
-
-      runOnUI(seedBubbleSimulation)(cx, cy, vx, vy, anchorX, anchorY, phases, BUBBLE_RADII, w, h, simReady);
+      if (h < 80 || seededRef.current) return;
+      seededRef.current = true;
+      fieldSizeRef.current = { w, h };
+      simRef.current = createBubbleState(w, h);
+      separateBubbles(simRef.current, BUBBLE_RADII, w, h);
+      syncMotionsFromSim();
+      setSimReady(true);
     },
-    [cx, cy, vx, vy, fieldW, fieldH, simReady],
+    [syncMotionsFromSim],
   );
 
-  const frameCallback = useFrameCallback((frame) => {
-    "worklet";
-    if (simReady.value === 0) return;
-    const dt = Math.min((frame.timeSincePreviousFrame ?? 16) / 1000, 0.032);
-    const cxArr = cx.value.slice();
-    const cyArr = cy.value.slice();
-    const vxArr = vx.value.slice();
-    const vyArr = vy.value.slice();
-    stepBubblePhysics(
-      { cx: cxArr, cy: cyArr, vx: vxArr, vy: vyArr },
-      BUBBLE_RADII,
-      fieldW.value,
-      fieldH.value,
-      dragIndex.value,
-      dt,
-    );
-    cx.value = cxArr;
-    cy.value = cyArr;
-    vx.value = vxArr;
-    vy.value = vyArr;
-  }, false);
-
   useEffect(() => {
-    frameCallback.setActive(true);
-    return () => {
-      frameCallback.setActive(false);
-      simReady.value = 0;
+    if (!simReady) return;
+    let frame = 0;
+    let last = Date.now();
+    const loop = () => {
+      const now = Date.now();
+      const dt = Math.min((now - last) / 1000, 0.032);
+      last = now;
+      const { w, h } = fieldSizeRef.current;
+      stepBubblePhysics(simRef.current, BUBBLE_RADII, w, h, dragIndexRef.current, dt);
+      for (let i = 0; i < BUBBLE_COUNT; i++) {
+        motions[i].x.value = simRef.current.cx[i];
+        motions[i].y.value = simRef.current.cy[i];
+      }
+      frame = requestAnimationFrame(loop);
     };
-  }, [frameCallback, simReady]);
+    frame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frame);
+  }, [simReady, motions]);
 
   const handleTap = useCallback(
     (id: AnsaProductId, centerX: number, centerY: number, size: number) => {
@@ -256,15 +237,11 @@ export function ProductPickerScreen({ onSelect }: Props) {
             index={index}
             product={p}
             diameter={BUBBLE_RADII[index] * 2}
-            cx={cx}
-            cy={cy}
-            vx={vx}
-            vy={vy}
-            fieldW={fieldW}
-            fieldH={fieldH}
-            dragIndex={dragIndex}
-            dragStartX={dragStartX}
-            dragStartY={dragStartY}
+            motion={motions[index]}
+            fieldSizeRef={fieldSizeRef}
+            simRef={simRef}
+            dragIndexRef={dragIndexRef}
+            dragStartRef={dragStartRef}
             onTap={handleTap}
           />
         ))}
