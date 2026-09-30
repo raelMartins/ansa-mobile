@@ -12,6 +12,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ApiError } from "../../core/api/errors";
 import { errorMessage } from "../../core/api/errors";
 import { Field, PrimaryButton, TextLink } from "../../core/ui/form";
+import { Wordmark } from "../../core/ui/Wordmark";
 import { useThemedStyles } from "../../core/ui/themedStyles";
 import { useSession } from "../../core/session/SessionContext";
 import type { AuthStackParamList } from "../../core/navigation/types";
@@ -24,6 +25,7 @@ export function SignInScreen({ navigation }: Props) {
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
     scroll: { flexGrow: 1, padding: 24, paddingTop: 48, gap: 16 },
+    brand: { marginBottom: 20 },
     header: { marginBottom: 8, gap: 8 },
     title: { fontSize: 28, fontFamily: f.semiBold, color: c.text },
     subtitle: { fontSize: 16, fontFamily: f.regular, lineHeight: 22, color: c.textMuted },
@@ -70,6 +72,9 @@ export function SignInScreen({ navigation }: Props) {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.brand}>
+            <Wordmark height={17} />
+          </View>
           <View style={styles.header}>
             <Text style={styles.title}>Sign in</Text>
             <Text style={styles.subtitle}>Use your ansa account to manage your business.</Text>
@@ -79,7 +84,7 @@ export function SignInScreen({ navigation }: Props) {
 
           <Field
             label="Email or phone"
-            hint="Same as on ansa shop web"
+            hint="Same as on ansa merchant web"
             error={fieldErrors.credential}
             inputProps={{
               value: credential,

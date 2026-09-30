@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { errorMessage } from "../../../core/api/errors";
 import { Field, PrimaryButton } from "../../../core/ui/form";
+import { Wordmark } from "../../../core/ui/Wordmark";
 import { useThemedStyles } from "../../../core/ui/themedStyles";
 import { useSession } from "../../../core/session/SessionContext";
 import { createMerchant, updateMerchant } from "../../api/merchant";
@@ -28,6 +29,7 @@ export function CreateShopScreen({ existingMerchant, onComplete }: Props) {
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
     scroll: { flexGrow: 1, padding: 24, paddingTop: 40, gap: 16 },
+    brand: { marginBottom: 16 },
     title: { fontSize: 26, fontFamily: f.semiBold, color: c.text },
     subtitle: { fontSize: 16, fontFamily: f.regular, lineHeight: 22, color: c.textMuted, marginBottom: 8 },
     formError: { color: c.error, fontSize: 15, fontFamily: f.regular },
@@ -110,6 +112,9 @@ export function CreateShopScreen({ existingMerchant, onComplete }: Props) {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.brand}>
+            <Wordmark height={17} />
+          </View>
           <Text style={styles.title}>{existingMerchant ? "Finish setup" : "Set up your business"}</Text>
           <Text style={styles.subtitle}>
             {existingMerchant

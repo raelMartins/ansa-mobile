@@ -69,7 +69,7 @@ export function OverviewScreen() {
         <Text style={styles.cardTitle}>Storefront</Text>
         <Row label="Public slug" value={merchant.slug} styles={styles} />
         <Text style={styles.hint}>
-          Your customer storefront lives on ansa web at /shop/{merchant.slug}. Share that link from WhatsApp or social.
+          Your customer storefront lives on ansa merchant web at /shop/{merchant.slug}. Share that link from WhatsApp or social.
         </Text>
       </View>
     </ScrollView>

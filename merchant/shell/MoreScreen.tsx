@@ -5,7 +5,7 @@ import { useSession } from "../../core/session/SessionContext";
 
 const FUTURE = [
   { title: "Customers", note: "Order history by customer — coming soon." },
-  { title: "Storefront", note: "Manage how buyers see your shop — coming soon." },
+  { title: "Storefront", note: "Manage how buyers see your storefront — coming soon." },
   { title: "Social", note: "Publish catalog to social channels — coming soon." },
   { title: "WhatsApp", note: "Order notifications and buyer chat — coming soon." },
   { title: "Settings", note: "Business and account settings — coming soon." },

@@ -1,4 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { View } from "react-native";
+import { Wordmark } from "../../core/ui/Wordmark";
 import { useTheme } from "../../core/ui/ThemeContext";
 import { OverviewScreen } from "../overview/screens/OverviewScreen";
 import { ModulePlaceholderScreen } from "./ModulePlaceholderScreen";
@@ -20,6 +22,12 @@ export function MerchantTabs() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+        headerTitle: () => (
+          <View style={{ marginLeft: -4 }}>
+            <Wordmark height={16} badge={false} />
+          </View>
+        ),
+        headerTitleAlign: "left",
       }}
     >
       <Tab.Screen name="Overview" component={OverviewScreen} options={{ title: "Overview" }} />
