@@ -122,7 +122,7 @@ export function CreateShopScreen({ existingMerchant, onComplete }: Props) {
           ) : (
             <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
               <Text style={styles.subtitle}>Create your business on</Text>
-              <BrandInline height={14} />
+              <BrandInline fontSize={16} />
               <Text style={styles.subtitle}>— add more details later.</Text>
             </View>
           )}

@@ -1,14 +1,14 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect } from "react";
-import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useRef } from "react";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
-  Easing,
   FadeIn,
+  runOnJS,
   useAnimatedStyle,
+  useFrameCallback,
   useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AnsaProductId } from "../core/onboarding/onboardingStorage";
@@ -16,96 +16,232 @@ import { ANSA_PRODUCTS, type AnsaProductOption } from "../core/onboarding/produc
 import { BrandInline } from "../core/ui/BrandInline";
 import { brand } from "../core/ui/brandColors";
 import { fontFamily } from "../core/ui/theme";
+import { initialBubbleVelocity, stepBubblePhysics } from "./bubblePhysics";
+import { ProductBubbleIcon } from "./ProductBubbleIcon";
 
-const { width: W, height: H } = Dimensions.get("window");
-const BASE = Math.min(W, H) * 0.19;
+const { width: W } = Dimensions.get("window");
+const TITLE_SIZE = 30;
+const BASE_DIAMETER = Math.min(W, 700) * 0.38;
+const BUBBLE_COUNT = ANSA_PRODUCTS.length;
+const BUBBLE_RADII = ANSA_PRODUCTS.map((p) => (BASE_DIAMETER * p.scale) / 2);
 
 type Props = {
   onSelect: (product: AnsaProductId, layout: { x: number; y: number; size: number }) => void;
 };
 
 function ProductBubble({
+  index,
   product,
-  onPress,
+  diameter,
+  cx,
+  cy,
+  vx,
+  vy,
+  fieldW,
+  fieldH,
+  dragIndex,
+  dragStartX,
+  dragStartY,
+  onTap,
 }: {
+  index: number;
   product: AnsaProductOption;
-  onPress: () => void;
+  diameter: number;
+  cx: SharedValue<number[]>;
+  cy: SharedValue<number[]>;
+  vx: SharedValue<number[]>;
+  vy: SharedValue<number[]>;
+  fieldW: SharedValue<number>;
+  fieldH: SharedValue<number>;
+  dragIndex: SharedValue<number>;
+  dragStartX: SharedValue<number>;
+  dragStartY: SharedValue<number>;
+  onTap: (id: AnsaProductId, centerX: number, centerY: number, size: number) => void;
 }) {
-  const float = useSharedValue(0);
-  const size = BASE * product.size;
+  const radius = diameter / 2;
+  const iconSize = diameter * 0.36;
+  const enabled = product.enabled;
 
-  useEffect(() => {
-    const delay = product.x * 400;
-    float.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 2200 + delay, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 2200 + delay, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-      true,
-    );
-  }, [float, product.x]);
+  const pan = Gesture.Pan()
+    .onStart(() => {
+      dragIndex.value = index;
+      dragStartX.value = cx.value[index];
+      dragStartY.value = cy.value[index];
+      vx.value[index] = 0;
+      vy.value[index] = 0;
+    })
+    .onUpdate((e) => {
+      const r = radius;
+      const w = fieldW.value;
+      const h = fieldH.value;
+      let nx = dragStartX.value + e.translationX;
+      let ny = dragStartY.value + e.translationY;
+      nx = Math.max(r, Math.min(w - r, nx));
+      ny = Math.max(r, Math.min(h - r, ny));
+      cx.value[index] = nx;
+      cy.value[index] = ny;
+    })
+    .onEnd((e) => {
+      vx.value[index] = e.velocityX * 0.45;
+      vy.value[index] = e.velocityY * 0.45;
+      dragIndex.value = -1;
+    })
+    .onFinalize(() => {
+      if (dragIndex.value === index) dragIndex.value = -1;
+    });
 
-  const anim = useAnimatedStyle(() => ({
-    transform: [{ translateY: (float.value - 0.5) * 10 }],
-  }));
+  const tap = Gesture.Tap()
+    .maxDuration(280)
+    .onEnd(() => {
+      if (!enabled) return;
+      runOnJS(onTap)(product.id, cx.value[index], cy.value[index], diameter);
+    });
 
-  const left = product.x * W - size / 2;
-  const top = product.y * H - size / 2;
+  const gesture = Gesture.Exclusive(pan, tap);
+
+  const anim = useAnimatedStyle(() => {
+    const x = cx.value[index] - radius;
+    const y = cy.value[index] - radius;
+    return {
+      left: x,
+      top: y,
+      width: diameter,
+      height: diameter,
+    };
+  });
 
   return (
-    <Animated.View
-      entering={FadeIn.delay(120 + ANSA_PRODUCTS.indexOf(product) * 80).duration(500)}
-      style={[styles.bubbleWrap, { left, top, width: size, height: size }, anim]}
-    >
-      <Pressable
-        disabled={!product.enabled}
-        onPress={onPress}
-        style={[
-          styles.bubble,
-          product.enabled ? styles.bubbleLive : styles.bubbleLocked,
-          { width: size, height: size, borderRadius: size / 2 },
-        ]}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !product.enabled }}
+    <GestureDetector gesture={gesture}>
+      <Animated.View
+        entering={FadeIn.delay(100 + index * 70).duration(480)}
+        style={[styles.bubbleWrap, anim]}
       >
-        <Text style={[styles.emoji, !product.enabled && styles.emojiMuted]}>{product.emoji}</Text>
-        <Text style={[styles.bubbleLabel, !product.enabled && styles.bubbleLabelMuted]}>{product.label}</Text>
-        {!product.enabled ? <Text style={styles.soon}>Soon</Text> : null}
-      </Pressable>
-    </Animated.View>
+        <View
+          style={[
+            styles.bubble,
+            enabled ? styles.bubbleLive : styles.bubbleLocked,
+            { width: diameter, height: diameter, borderRadius: radius },
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !enabled }}
+          accessibilityLabel={product.label}
+          accessibilityHint={enabled ? "Drag to move or tap to open" : "Coming soon"}
+        >
+          <ProductBubbleIcon
+            id={product.id}
+            size={iconSize}
+            color={enabled ? brand.forest : brand.inkMuted}
+            muted={!enabled}
+          />
+          <Text style={[styles.bubbleLabel, !enabled && styles.bubbleLabelMuted]}>{product.label}</Text>
+          <Text style={[styles.tagline, !enabled && styles.taglineMuted]} numberOfLines={1}>
+            {enabled ? product.tagline : "Soon"}
+          </Text>
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
+const FIELD_MIN_H = 420;
+
 export function ProductPickerScreen({ onSelect }: Props) {
   const insets = useSafeAreaInsets();
+  const initialized = useRef(false);
+  const fieldWindowY = useRef(0);
+  const fieldRef = useRef<View>(null);
+
+  const fieldW = useSharedValue(W);
+  const fieldH = useSharedValue(FIELD_MIN_H);
+  const cx = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(W / 2));
+  const cy = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(FIELD_MIN_H / 2));
+  const vx = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(0));
+  const vy = useSharedValue<number[]>(new Array(BUBBLE_COUNT).fill(0));
+  const dragIndex = useSharedValue(-1);
+  const dragStartX = useSharedValue(0);
+  const dragStartY = useSharedValue(0);
+
+  const layoutField = useCallback((w: number, h: number) => {
+    fieldW.value = w;
+    fieldH.value = h;
+    if (initialized.current) return;
+    initialized.current = true;
+    for (let i = 0; i < BUBBLE_COUNT; i++) {
+      const p = ANSA_PRODUCTS[i];
+      cx.value[i] = p.x * w;
+      cy.value[i] = p.y * h;
+      const vel = initialBubbleVelocity(p.driftPhase);
+      vx.value[i] = vel.vx;
+      vy.value[i] = vel.vy;
+    }
+  }, [cx, cy, vx, vy, fieldW, fieldH]);
+
+  useFrameCallback((frame) => {
+    "worklet";
+    const dt = Math.min((frame.timeSincePreviousFrame ?? 16) / 1000, 0.032);
+    stepBubblePhysics(
+      { cx: cx.value, cy: cy.value, vx: vx.value, vy: vy.value },
+      BUBBLE_RADII,
+      fieldW.value,
+      fieldH.value,
+      dragIndex.value,
+      dt,
+    );
+  });
+
+  const handleTap = useCallback(
+    (id: AnsaProductId, centerX: number, centerY: number, size: number) => {
+      const product = ANSA_PRODUCTS.find((p) => p.id === id);
+      if (!product?.enabled) return;
+      onSelect(id, { x: centerX, y: centerY + fieldWindowY.current, size });
+    },
+    [onSelect],
+  );
 
   return (
-    <View style={styles.root}>
-      <LinearGradient colors={[brand.forest, brand.inkFooter]} style={StyleSheet.absoluteFill} />
+    <GestureHandlerRootView style={styles.root}>
+      <LinearGradient colors={["#ffffff", brand.linen, brand.mist]} style={StyleSheet.absoluteFill} />
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>Choose your</Text>
-          <BrandInline height={28} inverse />
-          <View style={{ width: 4 }} />
+          <BrandInline fontSize={TITLE_SIZE} color={brand.forest} />
         </View>
         <Text style={styles.subtitle}>One account. Many products. Start with Merchant today.</Text>
       </View>
-      <View style={styles.field}>
-        {ANSA_PRODUCTS.map((p) => (
+      <View
+        ref={fieldRef}
+        style={styles.field}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          if (height > 0) layoutField(width, height);
+          fieldRef.current?.measureInWindow((_x, y) => {
+            fieldWindowY.current = y;
+          });
+        }}
+      >
+        {ANSA_PRODUCTS.map((p, index) => (
           <ProductBubble
             key={p.id}
+            index={index}
             product={p}
-            onPress={() => {
-              if (!p.enabled) return;
-              const size = BASE * p.size;
-              onSelect(p.id, { x: p.x * W, y: p.y * H, size });
-            }}
+            diameter={BUBBLE_RADII[index] * 2}
+            cx={cx}
+            cy={cy}
+            vx={vx}
+            vy={vy}
+            fieldW={fieldW}
+            fieldH={fieldH}
+            dragIndex={dragIndex}
+            dragStartX={dragStartX}
+            dragStartY={dragStartY}
+            onTap={handleTap}
           />
         ))}
       </View>
-      <Text style={[styles.hint, { paddingBottom: insets.bottom + 16 }]}>Tap Merchant to continue</Text>
-    </View>
+      <Text style={[styles.hint, { paddingBottom: insets.bottom + 16 }]}>
+        Drag bubbles around · tap Merchant to continue
+      </Text>
+    </GestureHandlerRootView>
   );
 }
 
@@ -119,17 +255,18 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "flex-end",
-    gap: 8,
+    alignItems: "center",
+    gap: 10,
   },
   title: {
-    color: brand.linen,
+    color: brand.forest,
     fontFamily: fontFamily.semiBold,
-    fontSize: 30,
+    fontSize: TITLE_SIZE,
     letterSpacing: -0.4,
+    lineHeight: TITLE_SIZE * 1.1,
   },
   subtitle: {
-    color: brand.sage,
+    color: brand.inkMuted,
     fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 22,
@@ -137,6 +274,8 @@ const styles = StyleSheet.create({
   },
   field: {
     flex: 1,
+    minHeight: FIELD_MIN_H,
+    overflow: "hidden",
   },
   bubbleWrap: {
     position: "absolute",
@@ -144,45 +283,45 @@ const styles = StyleSheet.create({
   bubble: {
     alignItems: "center",
     justifyContent: "center",
-    padding: 8,
-    borderWidth: 1,
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    gap: 4,
   },
   bubbleLive: {
-    backgroundColor: "rgba(227, 208, 150, 0.92)",
-    borderColor: "rgba(45, 66, 54, 0.12)",
-    shadowColor: brand.honey,
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    backgroundColor: "#ffffff",
+    borderColor: brand.honey,
+    shadowColor: brand.forest,
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
   },
   bubbleLocked: {
-    backgroundColor: "rgba(47, 52, 60, 0.75)",
-    borderColor: "rgba(205, 213, 206, 0.2)",
-    opacity: 0.72,
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderColor: "#cdd5ce",
   },
-  emoji: {
-    fontSize: 22,
-    color: brand.forest,
-    marginBottom: 2,
-  },
-  emojiMuted: { color: brand.sage },
   bubbleLabel: {
     fontFamily: fontFamily.semiBold,
-    fontSize: 13,
+    fontSize: 16,
     color: brand.forest,
     textAlign: "center",
+    marginTop: 4,
   },
   bubbleLabelMuted: {
-    color: brand.linen,
+    color: brand.inkMuted,
     fontFamily: fontFamily.medium,
   },
-  soon: {
-    marginTop: 2,
-    fontSize: 10,
-    fontFamily: fontFamily.medium,
+  tagline: {
+    fontFamily: fontFamily.regular,
+    fontSize: 12,
     color: brand.sage,
-    letterSpacing: 0.5,
+    textAlign: "center",
+  },
+  taglineMuted: {
+    fontFamily: fontFamily.medium,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    fontSize: 11,
   },
   hint: {
     textAlign: "center",

@@ -4,73 +4,75 @@ export type AnsaProductOption = {
   id: AnsaProductId;
   label: string;
   tagline: string;
-  emoji: string;
   enabled: boolean;
-  /** Bubble layout hint (0–1 normalized). */
+  /** Normalized anchor in bubble field (0–1). */
   x: number;
   y: number;
-  size: number;
+  /** Diameter scale vs base (merchant largest). */
+  scale: number;
+  /** Phase offset for drift animation (radians). */
+  driftPhase: number;
 };
 
 export const ANSA_PRODUCTS: AnsaProductOption[] = [
   {
     id: "merchant",
     label: "Merchant",
-    tagline: "Catalog, orders, storefront",
-    emoji: "◆",
+    tagline: "Catalog & orders",
     enabled: true,
     x: 0.5,
-    y: 0.42,
-    size: 1.15,
+    y: 0.48,
+    scale: 1.22,
+    driftPhase: 0,
   },
   {
     id: "delivery",
     label: "Delivery",
     tagline: "Ship with proof",
-    emoji: "◎",
     enabled: false,
-    x: 0.22,
-    y: 0.28,
-    size: 0.92,
+    x: 0.2,
+    y: 0.32,
+    scale: 1.05,
+    driftPhase: 1.2,
   },
   {
     id: "jobs",
     label: "Jobs",
-    tagline: "Verified work & bounties",
-    emoji: "◇",
+    tagline: "Work & bounties",
     enabled: false,
-    x: 0.78,
-    y: 0.26,
-    size: 0.9,
+    x: 0.8,
+    y: 0.3,
+    scale: 1.02,
+    driftPhase: 2.4,
   },
   {
     id: "check",
     label: "Check",
     tagline: "Trust & identity",
-    emoji: "✓",
     enabled: false,
-    x: 0.18,
-    y: 0.58,
-    size: 0.85,
+    x: 0.16,
+    y: 0.62,
+    scale: 0.98,
+    driftPhase: 0.8,
   },
   {
     id: "locate",
     label: "Locate",
-    tagline: "Spatial intelligence",
-    emoji: "◉",
+    tagline: "Maps & places",
     enabled: false,
-    x: 0.82,
-    y: 0.55,
-    size: 0.88,
+    x: 0.84,
+    y: 0.6,
+    scale: 1,
+    driftPhase: 3.1,
   },
   {
     id: "meets",
     label: "Meets",
     tagline: "Safe connections",
-    emoji: "○",
     enabled: false,
     x: 0.5,
-    y: 0.72,
-    size: 0.82,
+    y: 0.76,
+    scale: 0.96,
+    driftPhase: 1.9,
   },
 ];

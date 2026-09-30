@@ -18,7 +18,7 @@ export function IntroSlideVisual({ slide, width }: Props) {
       <View style={[styles.glass, { borderColor: `${accent}44` }]}>
         {slide.key === "platform" ? (
           <View style={styles.wordmarkCenter} pointerEvents="none">
-            <BrandInline height={34} inverse />
+            <BrandInline fontSize={34} inverse />
           </View>
         ) : null}
         <Svg width={width - 32} height={h - 24} viewBox="0 0 320 176">

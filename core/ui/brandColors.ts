@@ -6,4 +6,5 @@ export const brand = {
   linen: "#e3eae4",
   mist: "#d4dcd5",
   inkFooter: "#272930",
+  inkMuted: "#74877a",
 };

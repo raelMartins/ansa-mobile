@@ -62,7 +62,7 @@ export function EcosystemIntroScreen({ onComplete }: Props) {
         {item.titleWithBrand ? (
           <View style={styles.titleRow}>
             <Text style={styles.title}>{item.title}</Text>
-            <BrandInline height={30} inverse />
+            <BrandInline fontSize={32} inverse />
           </View>
         ) : (
           <Text style={styles.title}>{item.title}</Text>
@@ -70,7 +70,7 @@ export function EcosystemIntroScreen({ onComplete }: Props) {
         {item.bodyWithBrandId ? (
           <View style={styles.bodyRow}>
             <Text style={styles.body}>{item.body}</Text>
-            <BrandInline height={15} inverse />
+            <BrandInline fontSize={17} inverse />
             <Text style={styles.bodyId}>ID</Text>
           </View>
         ) : (
