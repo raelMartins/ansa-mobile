@@ -42,7 +42,7 @@ export function SplashScreen({ onComplete, quick, ready = true }: Props) {
     if (!ready || !drawDone) {
       return;
     }
-    const holdMs = quick ? 280 : 520;
+    const holdMs = quick ? 400 : 900;
     const t = setTimeout(() => finish(), holdMs);
     return () => clearTimeout(t);
   }, [ready, drawDone, quick, finish]);

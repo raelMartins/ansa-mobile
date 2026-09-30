@@ -4,22 +4,18 @@ export type EcosystemSlide = {
   title: string;
   body: string;
   accent: string;
-  /** Render wordmark as eyebrow instead of eyebrow text. */
-  brandEyebrow?: boolean;
   /** Title is “{title}” + inline wordmark (see EcosystemIntroScreen). */
   titleWithBrand?: boolean;
-  /** Body includes inline wordmark before “ ID.” */
+  /** Body includes inline wordmark + “ID” with spacing. */
   bodyWithBrandId?: boolean;
 };
 
 export const ECOSYSTEM_SLIDES: EcosystemSlide[] = [
   {
     key: "platform",
-    eyebrow: "",
-    brandEyebrow: true,
+    eyebrow: "one ecosystem",
     title: "One trusted platform",
-    body: "Commerce, logistics, jobs, identity, and community — connected by your",
-    bodyWithBrandId: true,
+    body: "Commerce, logistics, jobs, identity, and community — connected by one shared identity.",
     accent: "#e3d096",
   },
   {

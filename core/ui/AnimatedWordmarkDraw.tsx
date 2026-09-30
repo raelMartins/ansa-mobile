@@ -86,8 +86,8 @@ export function AnimatedWordmarkDraw({ height, color, quick, onLettersDrawn }: P
     if (!lengths) {
       return;
     }
-    const strokeMs = quick ? 300 : 520;
-    const staggerMs = quick ? 85 : 130;
+    const strokeMs = quick ? 420 : 780;
+    const staggerMs = quick ? 110 : 220;
     const easing = Easing.bezier(0.45, 0, 0.2, 1);
 
     WORDMARK_LETTER_PATHS.forEach((_, i) => {

@@ -1,34 +1,52 @@
 import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { Wordmark } from "./Wordmark";
 import { brand } from "./brandColors";
+import { fontFamily } from "./theme";
 
 type Props = {
   children: ReactNode;
+  heroTitle?: string;
+  heroSubtitle?: string;
 };
 
-export function AuthShell({ children }: Props) {
+export function AuthShell({ children, heroTitle, heroSubtitle }: Props) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={[brand.linen, "#ffffff", brand.mist]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[brand.forest, "#243528", brand.inkFooter]} style={styles.hero}>
+        <View style={[styles.heroInner, { paddingTop: insets.top + 28 }]}>
+          <Animated.View entering={FadeInUp.duration(500)}>
+            <Wordmark height={26} badge={false} inverse />
+          </Animated.View>
+          {heroTitle ? (
+            <Animated.Text entering={FadeInDown.delay(60).duration(450)} style={styles.heroTitle}>
+              {heroTitle}
+            </Animated.Text>
+          ) : null}
+          {heroSubtitle ? (
+            <Animated.Text entering={FadeInDown.delay(100).duration(450)} style={styles.heroSubtitle}>
+              {heroSubtitle}
+            </Animated.Text>
+          ) : null}
+        </View>
+      </LinearGradient>
+
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={styles.sheetWrap}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={insets.top}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
-          contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 24 }]}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.sheetScroll, { paddingBottom: insets.bottom + 24 }]}
+          showsVerticalScrollIndicator={false}
         >
-          <Animated.View entering={FadeInDown.duration(450)} style={styles.brand}>
-            <Wordmark height={22} badge={false} />
-          </Animated.View>
-          <Animated.View entering={FadeInDown.delay(80).duration(500)} style={styles.card}>
+          <Animated.View entering={FadeInDown.delay(120).duration(520)} style={styles.sheet}>
             {children}
           </Animated.View>
         </ScrollView>
@@ -38,25 +56,53 @@ export function AuthShell({ children }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  flex: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 22,
-    gap: 20,
+  root: {
+    flex: 1,
+    backgroundColor: brand.inkFooter,
   },
-  brand: { marginBottom: 4 },
-  card: {
+  hero: {
+    minHeight: 200,
+    paddingBottom: 36,
+  },
+  heroInner: {
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  heroTitle: {
+    color: brand.linen,
+    fontFamily: fontFamily.semiBold,
+    fontSize: 28,
+    letterSpacing: -0.4,
+    marginTop: 20,
+  },
+  heroSubtitle: {
+    color: brand.sage,
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 300,
+  },
+  sheetWrap: {
+    flex: 1,
+    marginTop: -28,
+  },
+  sheetScroll: {
+    flexGrow: 1,
+  },
+  sheet: {
+    flex: 1,
     backgroundColor: "#ffffff",
-    borderRadius: 22,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "rgba(205, 213, 206, 0.85)",
-    shadowColor: brand.forest,
-    shadowOpacity: 0.08,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 12,
+    minHeight: 420,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
     shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 4,
-    gap: 16,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 8,
+    gap: 4,
   },
 });

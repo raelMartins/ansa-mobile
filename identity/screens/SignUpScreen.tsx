@@ -4,7 +4,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ApiError } from "../../core/api/errors";
 import { errorMessage } from "../../core/api/errors";
 import { AuthShell } from "../../core/ui/AuthShell";
-import { BrandInline } from "../../core/ui/BrandInline";
 import { Field, PrimaryButton, TextLink } from "../../core/ui/form";
 import { useThemedStyles } from "../../core/ui/themedStyles";
 import { useSession } from "../../core/session/SessionContext";
@@ -58,16 +57,12 @@ export function SignUpScreen({ navigation }: Props) {
   }
 
   return (
-    <AuthShell>
+    <AuthShell heroTitle="Create your account" heroSubtitle="One identity for every product in the ecosystem.">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={{ gap: 14 }}>
+        <View style={{ gap: 16 }}>
           <View style={styles.header}>
-            <Text style={styles.title}>Create account</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-              <Text style={styles.subtitle}>One</Text>
-              <BrandInline height={14} />
-              <Text style={styles.subtitle}>ID for merchant, jobs, delivery, and more.</Text>
-            </View>
+            <Text style={styles.title}>Get started</Text>
+            <Text style={styles.subtitle}>Email and a secure password — about two minutes.</Text>
           </View>
 
           {formError ? <Text style={styles.formError}>{formError}</Text> : null}

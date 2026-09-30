@@ -87,6 +87,7 @@ export function ProductPickerScreen({ onSelect }: Props) {
         <View style={styles.titleRow}>
           <Text style={styles.title}>Choose your</Text>
           <BrandInline height={28} inverse />
+          <View style={{ width: 4 }} />
         </View>
         <Text style={styles.subtitle}>One account. Many products. Start with Merchant today.</Text>
       </View>

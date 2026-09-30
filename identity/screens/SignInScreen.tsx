@@ -58,12 +58,12 @@ export function SignInScreen({ navigation }: Props) {
   }
 
   return (
-    <AuthShell>
+    <AuthShell heroTitle="Welcome back" heroSubtitle="One identity across merchant, jobs, delivery, and more.">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={{ gap: 14 }}>
+        <View style={{ gap: 16 }}>
           <View style={styles.header}>
             <Text style={styles.title}>Sign in</Text>
-            <Text style={styles.subtitle}>One identity across every product.</Text>
+            <Text style={styles.subtitle}>Use your email or phone and password.</Text>
           </View>
 
           {formError ? <Text style={styles.formError}>{formError}</Text> : null}
