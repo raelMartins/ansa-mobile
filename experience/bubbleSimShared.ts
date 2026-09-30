@@ -32,28 +32,24 @@ export function seedBubbleSimulation(
 ) {
   "worklet";
   const n = radii.length;
-  const cxArr = anchorX.slice();
-  const cyArr = anchorY.slice();
+  const cxArr = anchorX.slice(0, n);
+  const cyArr = anchorY.slice(0, n);
+  const phases = driftPhases.slice(0, n);
+  const radiiLocal = radii.slice(0, n);
   const vxArr = new Array<number>(n);
   const vyArr = new Array<number>(n);
 
   for (let i = 0; i < n; i++) {
-    const vel = initialBubbleVelocity(driftPhases[i]);
+    const vel = initialBubbleVelocity(phases[i]);
     vxArr[i] = vel.vx;
     vyArr[i] = vel.vy;
   }
 
-  separateBubbles({ cx: cxArr, cy: cyArr, vx: vxArr, vy: vyArr }, radii, fieldW, fieldH);
+  separateBubbles({ cx: cxArr, cy: cyArr, vx: vxArr, vy: vyArr }, radiiLocal, fieldW, fieldH);
 
   cx.value = cxArr;
   cy.value = cyArr;
   vx.value = vxArr;
   vy.value = vyArr;
   simReady.value = 1;
-}
-
-export function publishBubblePositions(cx: SharedValue<number[]>, cy: SharedValue<number[]>) {
-  "worklet";
-  cx.value = cx.value.slice();
-  cy.value = cy.value.slice();
 }

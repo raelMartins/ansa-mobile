@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
@@ -18,7 +18,7 @@ import { BrandInline } from "../core/ui/BrandInline";
 import { brand } from "../core/ui/brandColors";
 import { fontFamily } from "../core/ui/theme";
 import { stepBubblePhysics } from "./bubblePhysics";
-import { publishBubblePositions, seedBubbleSimulation, setBubblePositionAt } from "./bubbleSimShared";
+import { seedBubbleSimulation, setBubblePositionAt } from "./bubbleSimShared";
 import { ProductBubbleIcon } from "./ProductBubbleIcon";
 
 const { width: W } = Dimensions.get("window");
@@ -190,20 +190,35 @@ export function ProductPickerScreen({ onSelect }: Props) {
     [cx, cy, vx, vy, fieldW, fieldH, simReady],
   );
 
-  useFrameCallback((frame) => {
+  const frameCallback = useFrameCallback((frame) => {
     "worklet";
     if (simReady.value === 0) return;
     const dt = Math.min((frame.timeSincePreviousFrame ?? 16) / 1000, 0.032);
+    const cxArr = cx.value.slice();
+    const cyArr = cy.value.slice();
+    const vxArr = vx.value.slice();
+    const vyArr = vy.value.slice();
     stepBubblePhysics(
-      { cx: cx.value, cy: cy.value, vx: vx.value, vy: vy.value },
+      { cx: cxArr, cy: cyArr, vx: vxArr, vy: vyArr },
       BUBBLE_RADII,
       fieldW.value,
       fieldH.value,
       dragIndex.value,
       dt,
     );
-    publishBubblePositions(cx, cy);
-  });
+    cx.value = cxArr;
+    cy.value = cyArr;
+    vx.value = vxArr;
+    vy.value = vyArr;
+  }, false);
+
+  useEffect(() => {
+    frameCallback.setActive(true);
+    return () => {
+      frameCallback.setActive(false);
+      simReady.value = 0;
+    };
+  }, [frameCallback, simReady]);
 
   const handleTap = useCallback(
     (id: AnsaProductId, centerX: number, centerY: number, size: number) => {
