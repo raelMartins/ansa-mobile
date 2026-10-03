@@ -18,6 +18,7 @@ import {
 } from "../ui/MerchantTabIcons";
 import type { MerchantTabParamList } from "../../core/navigation/types";
 import { MerchantHeaderNotificationButton } from "../ui/MerchantHeaderNotification";
+import { MerchantGlassTabBarBackground, merchantGlassTabBarStyle } from "./MerchantGlassTabBar";
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 
@@ -39,13 +40,8 @@ export function MerchantTabs() {
         headerShadowVisible: false,
         headerTintColor: colors.text,
         headerTitleStyle: { fontFamily: fonts.semiBold },
-        tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          paddingTop: 6,
-          height: Platform.OS === "ios" ? 88 : 64,
-        },
+        tabBarBackground: () => <MerchantGlassTabBarBackground />,
+        tabBarStyle: merchantGlassTabBarStyle,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11, marginBottom: Platform.OS === "ios" ? 0 : 8 },

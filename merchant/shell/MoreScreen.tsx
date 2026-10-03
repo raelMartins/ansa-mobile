@@ -21,6 +21,7 @@ import { MerchantCard } from "../ui/MerchantCard";
 import { MerchantScreenHeader } from "../ui/MerchantScreenHeader";
 import { SoonPill } from "../ui/SoonPill";
 import { merchantRadii } from "../ui/merchantUi";
+import { useMerchantTabBarInset } from "./MerchantGlassTabBar";
 
 const FUTURE = [
   { title: "Customers", note: "Order history by buyer" },
@@ -71,10 +72,11 @@ export function MoreScreen() {
   const { selectedProduct, selectProduct, replayWelcome } = useOnboarding();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const product = getProduct(selectedProduct ?? "merchant");
+  const tabBarInset = useMerchantTabBarInset();
 
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, gap: 16, paddingBottom: 44 },
+    content: { padding: 20, gap: 16 },
     productRow: { flexDirection: "row", alignItems: "center", gap: 14 },
     productBadge: {
       width: 52,
@@ -122,7 +124,11 @@ export function MoreScreen() {
   }));
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={[styles.content, { paddingBottom: tabBarInset }]}
+      showsVerticalScrollIndicator={false}
+    >
       <MerchantScreenHeader title="More" subtitle="Preferences and tools for your merchant workspace." />
 
       <MerchantCard title="Product" delay={60}>

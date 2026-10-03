@@ -13,6 +13,7 @@ import { MerchantCard } from "../ui/MerchantCard";
 import { MerchantScreenHeader } from "../ui/MerchantScreenHeader";
 import { SoonPill } from "../ui/SoonPill";
 import { merchantRadii } from "../ui/merchantUi";
+import { useMerchantTabBarInset } from "./MerchantGlassTabBar";
 
 type ModuleKey = "products" | "orders";
 
@@ -62,9 +63,10 @@ type Props = { module: ModuleKey };
 export function ModuleComingSoonScreen({ module }: Props) {
   const { colors } = useTheme();
   const meta = COPY[module];
+  const tabBarInset = useMerchantTabBarInset();
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, paddingBottom: 40, gap: 16 },
+    content: { padding: 20, gap: 16 },
     hero: {
       alignItems: "center",
       paddingVertical: 20,
@@ -102,7 +104,11 @@ export function ModuleComingSoonScreen({ module }: Props) {
   }));
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={[styles.content, { paddingBottom: tabBarInset }]}
+      showsVerticalScrollIndicator={false}
+    >
       <MerchantScreenHeader title={meta.title} subtitle={meta.subtitle} />
       <Animated.View entering={FadeIn.delay(120).duration(500)} style={styles.hero}>
         <View style={styles.heroIcon}>{meta.icon(colors.text)}</View>

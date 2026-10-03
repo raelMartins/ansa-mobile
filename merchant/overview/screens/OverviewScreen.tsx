@@ -19,6 +19,7 @@ import { useMerchant } from "../../MerchantContext";
 import { formatNairaFromKobo } from "../../lib/money";
 import { formatOrderTime, orderStatusLabel, orderStatusTone } from "../../lib/orders";
 import { BusinessSwitcherSheet } from "../../shell/BusinessSwitcherSheet";
+import { useMerchantTabBarInset } from "../../shell/MerchantGlassTabBar";
 import { InfoBanner } from "../../ui/InfoBanner";
 import { MerchantPrimaryButton, MerchantSecondaryButton } from "../../ui/MerchantButtons";
 import { merchantCardBackground, merchantRadii } from "../../ui/merchantUi";
@@ -55,10 +56,11 @@ export function OverviewScreen() {
   const { isOffline, isReady: networkReady } = useNetworkStatus();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const tabBarInset = useMerchantTabBarInset();
 
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    content: { paddingHorizontal: 20, paddingBottom: 32, gap: 16 },
+    content: { paddingHorizontal: 20, gap: 16 },
     businessRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
     businessBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, minHeight: 44 },
     businessText: { fontSize: 14, fontFamily: f.medium, color: c.textMuted },
@@ -133,7 +135,7 @@ export function OverviewScreen() {
     <>
       <ScrollView
         style={styles.root}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarInset }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
       >

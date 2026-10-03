@@ -21,6 +21,7 @@ import { MerchantPrimaryButton } from "../../ui/MerchantButtons";
 import { merchantRadii } from "../../ui/merchantUi";
 import { filterCounts, filterProducts, type ProductFilter } from "../productFilters";
 import { useProducts } from "../useProducts";
+import { useMerchantTabBarInset } from "../../shell/MerchantGlassTabBar";
 
 type Nav = NativeStackNavigationProp<ProductsStackParamList, "ProductList">;
 
@@ -29,6 +30,7 @@ export function ProductListScreen() {
   const { isOffline, isReady: networkReady } = useNetworkStatus();
   const { colors, fonts } = useTheme();
   const { state, reload } = useProducts();
+  const tabBarInset = useMerchantTabBarInset();
 
   useFocusEffect(
     useCallback(() => {
@@ -41,7 +43,7 @@ export function ProductListScreen() {
 
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, gap: 14, paddingBottom: 32 },
+    content: { padding: 20, gap: 14 },
     title: { fontSize: 28, fontFamily: f.bold, color: c.text, letterSpacing: -0.4 },
     search: {
       borderWidth: 1,
@@ -83,7 +85,7 @@ export function ProductListScreen() {
   return (
     <ScrollView
       style={styles.root}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: tabBarInset }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
       keyboardShouldPersistTaps="handled"
     >
