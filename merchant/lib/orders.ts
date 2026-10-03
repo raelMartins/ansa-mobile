@@ -1,22 +1,44 @@
-import type { MerchantOrderPublic } from "../types";
+import type { MerchantOrderPublic, OrderStatus, PaymentStatus } from "../types";
 
-export function orderStatusLabel(order: MerchantOrderPublic): string {
-  if (order.orderStatus === "ready") return "Ready for pickup";
-  if (order.orderStatus === "processing") return "Packing";
-  if (order.orderStatus === "out_for_delivery") return "Out for delivery";
-  if (order.orderStatus === "delivered") return "Delivered";
-  if (order.orderStatus === "cancelled") return "Cancelled";
-  if (order.paymentStatus === "paid") return "Paid";
-  if (order.paymentStatus === "pending") return "Awaiting payment";
-  return "Unfulfilled";
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "Pending",
+  confirmed: "New order",
+  processing: "Packing",
+  ready: "Ready for pickup",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
+  pending: "Awaiting payment",
+  paid: "Paid",
+  failed: "Payment failed",
+};
+
+type OrderLike = Pick<MerchantOrderPublic, "paymentStatus" | "orderStatus">;
+
+export function orderStatusLabel(order: OrderLike): string {
+  if (order.paymentStatus === "pending" && order.orderStatus === "pending") {
+    return PAYMENT_STATUS_LABEL.pending;
+  }
+  if (order.paymentStatus === "failed") return PAYMENT_STATUS_LABEL.failed;
+  return ORDER_STATUS_LABEL[order.orderStatus as OrderStatus] ?? order.orderStatus;
 }
 
-export function orderStatusTone(order: MerchantOrderPublic): "neutral" | "warn" | "success" | "muted" {
-  if (order.orderStatus === "ready") return "success";
-  if (order.orderStatus === "processing") return "warn";
+export function orderStatusTone(order: OrderLike): "neutral" | "warn" | "success" | "muted" {
+  if (order.orderStatus === "ready" || order.orderStatus === "out_for_delivery") return "success";
+  if (order.orderStatus === "processing" || order.orderStatus === "confirmed") return "warn";
   if (order.orderStatus === "delivered") return "muted";
-  if (order.paymentStatus === "paid") return "neutral";
-  return "muted";
+  if (order.orderStatus === "cancelled") return "muted";
+  if (order.paymentStatus === "pending") return "warn";
+  return "neutral";
+}
+
+export function orderNeedsAttention(order: OrderLike): boolean {
+  if (order.orderStatus === "cancelled" || order.orderStatus === "delivered") return false;
+  if (order.paymentStatus !== "paid") return order.paymentStatus === "pending";
+  return ["pending", "confirmed", "processing"].includes(order.orderStatus);
 }
 
 export function formatOrderTime(iso: string): string {

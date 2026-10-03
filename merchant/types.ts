@@ -60,7 +60,56 @@ export type CreateProductInput = {
   category?: string | null;
 };
 
-export type UpdateProductInput = Partial<CreateProductInput> & { status?: ProductStatus };
+export type UpdateProductInput = Partial<CreateProductInput> & {
+  status?: ProductStatus;
+};
+
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "processing"
+  | "ready"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
+export type PaymentStatus = "pending" | "paid" | "failed";
+
+export type MerchantOrderItem = {
+  id: string;
+  productId: string | null;
+  title: string;
+  kind: "product" | "service";
+  quantity: number;
+  unitPriceKobo: number;
+};
+
+export type MerchantOrder = {
+  id: string;
+  merchantId: string;
+  merchantName: string | null;
+  reference: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string | null;
+  fulfilment: "pickup" | "delivery";
+  deliveryAddress: string | null;
+  deliveryInstructions: string | null;
+  deliveryFeeKobo: number;
+  subtotalKobo: number;
+  totalKobo: number;
+  paymentStatus: PaymentStatus;
+  orderStatus: OrderStatus;
+  paymentProvider: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: MerchantOrderItem[];
+};
+
+export type UpdateOrderStatusResult = {
+  order: MerchantOrder;
+  notification?: { detail: string; simulated: boolean } | null;
+};
 
 export type MerchantOrderPublic = {
   id: string;
@@ -68,8 +117,8 @@ export type MerchantOrderPublic = {
   customerName: string;
   customerPhone: string;
   totalKobo: number;
-  paymentStatus: "pending" | "paid" | "failed";
-  orderStatus: string;
+  paymentStatus: PaymentStatus;
+  orderStatus: OrderStatus;
   createdAt: string;
 };
 

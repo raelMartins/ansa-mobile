@@ -199,11 +199,20 @@ export function OverviewScreen() {
 
             <View style={styles.metricsRow}>
               <Animated.View entering={FadeInDown.delay(100).duration(480).springify()} style={styles.metricCard}>
-                <Text style={styles.metricLabel}>To fulfill</Text>
-                <Text style={styles.metricValue}>{data.toFulfill}</Text>
-                <Text style={styles.metricSub}>
-                  {data.readyForPickup > 0 ? `${data.readyForPickup} ready for pickup` : "No orders waiting"}
-                </Text>
+                <Pressable
+                  onPress={() => {
+                    feedback.tap();
+                    navigation.navigate("Orders", { screen: "OrderList", params: { filter: "attention" } });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="View orders to fulfill"
+                >
+                  <Text style={styles.metricLabel}>To fulfill</Text>
+                  <Text style={styles.metricValue}>{data.toFulfill}</Text>
+                  <Text style={styles.metricSub}>
+                    {data.readyForPickup > 0 ? `${data.readyForPickup} ready for pickup` : "No orders waiting"}
+                  </Text>
+                </Pressable>
               </Animated.View>
               <Animated.View entering={FadeInDown.delay(140).duration(480).springify()} style={styles.metricCard}>
                 <Text style={styles.metricLabel}>Customers</Text>
@@ -222,7 +231,10 @@ export function OverviewScreen() {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <MerchantSecondaryButton label="View orders" onPress={() => navigation.navigate("Orders")} />
+                <MerchantSecondaryButton
+                  label="View orders"
+                  onPress={() => navigation.navigate("Orders", { screen: "OrderList" })}
+                />
               </View>
             </View>
 
@@ -235,7 +247,10 @@ export function OverviewScreen() {
             <View style={{ gap: 8 }}>
               <View style={styles.sectionHead}>
                 <Text style={styles.sectionTitle}>Recent orders</Text>
-                <Pressable onPress={() => navigation.navigate("Orders")} hitSlop={8}>
+                <Pressable
+                  onPress={() => navigation.navigate("Orders", { screen: "OrderList" })}
+                  hitSlop={8}
+                >
                   <Text style={styles.link}>View all +</Text>
                 </Pressable>
               </View>
@@ -243,7 +258,15 @@ export function OverviewScreen() {
                 <Text style={styles.metricSub}>No orders yet — share your storefront when you are ready.</Text>
               ) : (
                 data.recentOrders.map((order) => (
-                  <View key={order.id} style={styles.orderRow}>
+                  <Pressable
+                    key={order.id}
+                    style={styles.orderRow}
+                    onPress={() => {
+                      feedback.tap();
+                      navigation.navigate("Orders", { screen: "OrderDetail", params: { orderId: order.id } });
+                    }}
+                    accessibilityRole="button"
+                  >
                     <View style={{ flex: 1, gap: 4 }}>
                       <Text style={styles.orderId}>#{order.reference}</Text>
                       <Text style={styles.orderMeta}>
@@ -254,7 +277,7 @@ export function OverviewScreen() {
                       <StatusPill label={orderStatusLabel(order)} tone={orderStatusTone(order)} />
                       <Text style={styles.orderAmount}>{formatNairaFromKobo(order.totalKobo)}</Text>
                     </View>
-                  </View>
+                  </Pressable>
                 ))
               )}
             </View>
