@@ -21,6 +21,7 @@ import {
   PAYMENT_STATUS_LABEL,
   orderStatusLabel,
   orderStatusTone,
+  paymentStatusTone,
 } from "../../lib/orders";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import type { MerchantOrder, OrderStatus } from "../../types";
@@ -29,6 +30,7 @@ import { MerchantPrimaryButton, MerchantSecondaryButton } from "../../ui/Merchan
 import { StatusPill } from "../../ui/StatusPill";
 import { merchantCardBackground, merchantRadii } from "../../ui/merchantUi";
 import { useTheme } from "../../../core/ui/ThemeContext";
+import { useMerchantTabBarInset } from "../../shell/MerchantGlassTabBar";
 import { availableOrderActions, type OrderAction } from "../orderActions";
 
 type Route = RouteProp<OrdersStackParamList, "OrderDetail">;
@@ -60,6 +62,7 @@ export function OrderDetailScreen() {
   const { merchantId } = useMerchant();
   const { api } = useSession();
   const { scheme } = useTheme();
+  const tabBarInset = useMerchantTabBarInset();
   const [order, setOrder] = useState<MerchantOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,7 +108,7 @@ export function OrderDetailScreen() {
 
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, gap: 16, paddingBottom: 40 },
+    content: { padding: 20, gap: 16 },
     head: { gap: 8 },
     ref: { fontSize: 22, fontFamily: f.bold, color: c.text, letterSpacing: -0.3 },
     meta: { fontSize: 14, fontFamily: f.regular, color: c.textMuted },
@@ -175,13 +178,13 @@ export function OrderDetailScreen() {
   const cancelled = order.orderStatus === "cancelled";
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.root} contentContainerStyle={[styles.content, { paddingBottom: tabBarInset }]}>
       <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.head}>
         <Text style={styles.ref}>{order.reference}</Text>
         <Text style={styles.meta}>Placed {formatDateTime(order.createdAt)}</Text>
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <StatusPill label={orderStatusLabel(order)} tone={orderStatusTone(order)} />
-          <StatusPill label={PAYMENT_STATUS_LABEL[order.paymentStatus]} tone={order.paymentStatus === "paid" ? "success" : "warn"} />
+          <StatusPill label={PAYMENT_STATUS_LABEL[order.paymentStatus]} tone={paymentStatusTone(order.paymentStatus)} />
         </View>
       </Animated.View>
 

@@ -1,3 +1,4 @@
+import type { StatusPillTone } from "../ui/StatusPill";
 import type { MerchantOrderPublic, OrderStatus, PaymentStatus } from "../types";
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
@@ -26,13 +27,34 @@ export function orderStatusLabel(order: OrderLike): string {
   return ORDER_STATUS_LABEL[order.orderStatus as OrderStatus] ?? order.orderStatus;
 }
 
-export function orderStatusTone(order: OrderLike): "neutral" | "warn" | "success" | "muted" {
-  if (order.orderStatus === "ready" || order.orderStatus === "out_for_delivery") return "success";
-  if (order.orderStatus === "processing" || order.orderStatus === "confirmed") return "warn";
-  if (order.orderStatus === "delivered") return "muted";
-  if (order.orderStatus === "cancelled") return "muted";
-  if (order.paymentStatus === "pending") return "warn";
-  return "neutral";
+export function orderStatusTone(order: OrderLike): StatusPillTone {
+  if (order.paymentStatus === "failed") return "paymentFailed";
+  if (order.paymentStatus === "pending" && order.orderStatus === "pending") return "awaitingPayment";
+
+  switch (order.orderStatus as OrderStatus) {
+    case "confirmed":
+      return "newOrder";
+    case "processing":
+      return "packing";
+    case "ready":
+      return "ready";
+    case "out_for_delivery":
+      return "inTransit";
+    case "delivered":
+      return "delivered";
+    case "cancelled":
+      return "cancelled";
+    case "pending":
+      return "orderPending";
+    default:
+      return "neutral";
+  }
+}
+
+export function paymentStatusTone(status: PaymentStatus): StatusPillTone {
+  if (status === "paid") return "paid";
+  if (status === "failed") return "paymentFailed";
+  return "awaitingPayment";
 }
 
 export function orderNeedsAttention(order: OrderLike): boolean {

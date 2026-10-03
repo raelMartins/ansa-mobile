@@ -1,4 +1,4 @@
-import { orderNeedsAttention, orderStatusLabel } from "./orders";
+import { orderNeedsAttention, orderStatusLabel, orderStatusTone, paymentStatusTone } from "./orders";
 import type { MerchantOrderPublic } from "../types";
 
 const base: MerchantOrderPublic = {
@@ -22,5 +22,23 @@ describe("orders lib", () => {
   it("flags paid unfulfilled orders as needing attention", () => {
     expect(orderNeedsAttention(base)).toBe(true);
     expect(orderNeedsAttention({ ...base, orderStatus: "delivered" })).toBe(false);
+  });
+
+  it("maps distinct pill tones per fulfilment status", () => {
+    expect(orderStatusTone({ ...base, orderStatus: "confirmed" })).toBe("newOrder");
+    expect(orderStatusTone({ ...base, orderStatus: "processing" })).toBe("packing");
+    expect(orderStatusTone({ ...base, orderStatus: "ready" })).toBe("ready");
+    expect(orderStatusTone({ ...base, orderStatus: "out_for_delivery" })).toBe("inTransit");
+    expect(orderStatusTone({ ...base, orderStatus: "delivered" })).toBe("delivered");
+    expect(orderStatusTone({ ...base, orderStatus: "cancelled" })).toBe("cancelled");
+    expect(
+      orderStatusTone({ ...base, paymentStatus: "pending", orderStatus: "pending" }),
+    ).toBe("awaitingPayment");
+  });
+
+  it("maps payment pill tones", () => {
+    expect(paymentStatusTone("paid")).toBe("paid");
+    expect(paymentStatusTone("failed")).toBe("paymentFailed");
+    expect(paymentStatusTone("pending")).toBe("awaitingPayment");
   });
 });
