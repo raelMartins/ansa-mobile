@@ -1,6 +1,6 @@
 /**
  * Motion spec — product switcher (More tab):
- * - Enter: backdrop fades in; sheet springs up from the bottom; tiles stagger in.
+ * - Enter: backdrop fades in; sheet slides up from the bottom; tiles stagger in.
  * - Exit: sheet slides down with an ease-in, backdrop fades, then the modal unmounts.
  * - Primary interaction: tiles spring on press; disabled tiles shake.
  * - Reduced motion: tiles fade only (ProductTile); sheet keeps a short slide.
@@ -13,10 +13,10 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { motion } from "../../experience/motion";
 import { useTheme } from "../ui/ThemeContext";
 import { bentoLayout } from "./bento";
 import { ANSA_PRODUCTS, type AnsaProduct, type AnsaProductId } from "./catalog";
@@ -46,9 +46,10 @@ export function ProductSwitcherSheet({ visible, currentId, onClose, onSwitch }: 
   useEffect(() => {
     if (visible) {
       setMounted(true);
-      t.value = reduceMotion ? withTiming(1, { duration: 220 }) : withSpring(1, { damping: 26, stiffness: 190 });
+      const openMs = reduceMotion ? 180 : motion.duration.sheetOpen;
+      t.value = withTiming(1, { duration: openMs, easing: Easing.out(Easing.cubic) });
     } else {
-      t.value = withTiming(0, { duration: 240, easing: Easing.in(Easing.quad) }, (done) => {
+      t.value = withTiming(0, { duration: motion.duration.sheetClose, easing: Easing.in(Easing.cubic) }, (done) => {
         if (done) runOnJS(setMounted)(false);
       });
     }

@@ -52,5 +52,13 @@ export function useOverview() {
     if (merchantId) void load("refresh");
   });
 
-  return { state, refresh: () => load("refresh"), retry: () => load("initial") };
+  const refresh = useCallback(() => {
+    void load("refresh");
+  }, [load]);
+
+  const retry = useCallback(() => {
+    void load("initial");
+  }, [load]);
+
+  return { state, refresh, retry };
 }

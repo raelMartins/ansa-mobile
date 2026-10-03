@@ -47,5 +47,13 @@ export function useProducts() {
     if (merchantId) void load("refresh");
   });
 
-  return { state, reload: () => load("initial") };
+  const reload = useCallback(() => {
+    void load("initial");
+  }, [load]);
+
+  const refresh = useCallback(() => {
+    void load("refresh");
+  }, [load]);
+
+  return { state, reload, refresh };
 }

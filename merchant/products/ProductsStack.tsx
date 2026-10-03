@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import type { ProductsStackParamList } from "../../core/navigation/types";
 import { Wordmark } from "../../core/ui/Wordmark";
 import { brand } from "../../core/ui/brandColors";
@@ -8,6 +8,7 @@ import { ProductAddScreen, ProductEditScreen } from "./screens/ProductFormScreen
 import { ProductDetailScreen } from "./screens/ProductDetailScreen";
 import { ProductListScreen } from "./screens/ProductListScreen";
 import { ProductSavedScreen } from "./screens/ProductSavedScreen";
+import { MerchantHeaderNotificationButton } from "../ui/MerchantHeaderNotification";
 
 const Stack = createNativeStackNavigator<ProductsStackParamList>();
 
@@ -35,8 +36,13 @@ export function ProductsStack() {
         name="ProductList"
         component={ProductListScreen}
         options={{
-          headerTitle: () => <Wordmark height={16} badge={false} />,
+          headerTitle: () => (
+            <View style={{ marginLeft: -4 }}>
+              <Wordmark height={16} badge={false} />
+            </View>
+          ),
           headerTitleAlign: "left",
+          headerRight: () => <MerchantHeaderNotificationButton />,
         }}
       />
       <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: "Product detail" }} />

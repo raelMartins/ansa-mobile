@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { motion } from "../../experience/motion";
 import { feedback } from "../feedback/feedback";
 import { useTheme } from "./ThemeContext";
 
@@ -35,7 +36,10 @@ export function SegmentedControl<T extends string>({
   const segment = (width - 8) / options.length;
 
   useEffect(() => {
-    pos.value = withSpring(index, { damping: 20, stiffness: 220 });
+    pos.value = withTiming(index, {
+      duration: motion.duration.segmented,
+      easing: Easing.bezier(0.33, 0, 0.2, 1),
+    });
   }, [index, pos]);
 
   const indicator = useAnimatedStyle(() => ({

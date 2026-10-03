@@ -17,6 +17,7 @@ import {
   TabIconProducts,
 } from "../ui/MerchantTabIcons";
 import type { MerchantTabParamList } from "../../core/navigation/types";
+import { MerchantHeaderNotificationButton } from "../ui/MerchantHeaderNotification";
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 
@@ -62,6 +63,7 @@ export function MerchantTabs() {
         component={OverviewScreen}
         options={{
           title: "Overview",
+          headerRight: () => <MerchantHeaderNotificationButton />,
           tabBarIcon: ({ color }) => <TabIconOverview color={color} size={TAB_ICON} />,
         }}
       />

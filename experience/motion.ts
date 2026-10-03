@@ -10,6 +10,11 @@ export const motion = {
     slide: 520,
     fade: 380,
     reveal: 780,
+    /** Bottom sheets — linear slide, no overshoot. */
+    sheetOpen: 280,
+    sheetClose: 220,
+    /** Segmented control indicator. */
+    segmented: 220,
   },
   easing: Easing.bezier(0.22, 1, 0.36, 1),
   /** Pen/stroke tracing — slow in, confident middle, soft landing. */

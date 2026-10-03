@@ -3,7 +3,7 @@
  * - Enter: header + cards FadeInDown stagger on first load.
  * - Loading: skeleton blocks fade in; no hard cut.
  * - Error: cached metrics stay visible; retry button press uses primary feedback.
- * - Primary interactions: quick actions navigate with tab transition; business sheet springs up.
+ * - Primary interactions: quick actions navigate with tab transition; business sheet slides up.
  * - Reduced motion: Reanimated entering animations respect system setting.
  */
 import { useNavigation } from "@react-navigation/native";
@@ -22,7 +22,6 @@ import { BusinessSwitcherSheet } from "../../shell/BusinessSwitcherSheet";
 import { InfoBanner } from "../../ui/InfoBanner";
 import { MerchantPrimaryButton, MerchantSecondaryButton } from "../../ui/MerchantButtons";
 import { merchantCardBackground, merchantRadii } from "../../ui/merchantUi";
-import { IconNotificationBell } from "../../ui/MerchantHeaderIcons";
 import { OfflineBanner } from "../../ui/OfflineBanner";
 import { StatusPill } from "../../ui/StatusPill";
 import { OverviewSkeleton } from "../OverviewSkeleton";
@@ -60,10 +59,9 @@ export function OverviewScreen() {
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
     content: { paddingHorizontal: 20, paddingBottom: 32, gap: 16 },
-    businessRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
+    businessRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
     businessBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, minHeight: 44 },
     businessText: { fontSize: 14, fontFamily: f.medium, color: c.textMuted },
-    bell: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
     greeting: { fontSize: 26, fontFamily: f.semiBold, color: c.text, letterSpacing: -0.4, lineHeight: 32 },
     subGreeting: { fontSize: 15, fontFamily: f.regular, color: c.textMuted, lineHeight: 22, marginTop: 6 },
     hero: {
@@ -154,14 +152,6 @@ export function OverviewScreen() {
               {merchant.location ? ` · ${merchant.location}` : ""}
             </Text>
             <Text style={styles.businessText}>▾</Text>
-          </Pressable>
-          <Pressable
-            style={styles.bell}
-            accessibilityLabel="Notifications"
-            accessibilityRole="button"
-            onPress={() => feedback.tap()}
-          >
-            <IconNotificationBell color={colors.textMuted} size={22} />
           </Pressable>
         </View>
 

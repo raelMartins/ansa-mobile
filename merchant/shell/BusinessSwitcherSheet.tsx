@@ -1,6 +1,6 @@
 /**
- * Motion: backdrop fade; sheet spring from bottom; list items press feedback.
- * Reduced motion: shorter timing on sheet travel.
+ * Motion: backdrop fade; sheet slides up (timed, no spring overshoot).
+ * Reduced motion: shorter sheet travel.
  */
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
@@ -10,10 +10,10 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { motion } from "../../experience/motion";
 import { feedback } from "../../core/feedback/feedback";
 import { useTheme } from "../../core/ui/ThemeContext";
 import type { Merchant } from "../types";
@@ -39,9 +39,10 @@ export function BusinessSwitcherSheet({ visible, merchants, activeId, onClose, o
   useEffect(() => {
     if (visible) {
       setMounted(true);
-      t.value = reduceMotion ? withTiming(1, { duration: 220 }) : withSpring(1, { damping: 26, stiffness: 190 });
+      const openMs = reduceMotion ? 180 : motion.duration.sheetOpen;
+      t.value = withTiming(1, { duration: openMs, easing: Easing.out(Easing.cubic) });
     } else {
-      t.value = withTiming(0, { duration: 240, easing: Easing.in(Easing.quad) }, (done) => {
+      t.value = withTiming(0, { duration: motion.duration.sheetClose, easing: Easing.in(Easing.cubic) }, (done) => {
         if (done) runOnJS(setMounted)(false);
       });
     }
