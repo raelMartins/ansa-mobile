@@ -122,6 +122,27 @@ export type MerchantOrderPublic = {
   createdAt: string;
 };
 
+export type MerchantCustomer = {
+  name: string;
+  phone: string;
+  email: string | null;
+  orders: number;
+  spentKobo: number;
+  firstOrderAt: string;
+  lastOrderAt: string;
+};
+
+export type MerchantCustomerDetail = {
+  customer: MerchantCustomer & { isGuest: boolean };
+  orders: MerchantOrderPublic[];
+};
+
+export type CustomerIdentity = {
+  name: string;
+  phone: string;
+  email: string | null;
+};
+
 export type MerchantOverview = {
   merchant: {
     id: string;

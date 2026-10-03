@@ -15,9 +15,21 @@ export type OrdersStackParamList = {
   OrderDetail: { orderId: string };
 };
 
+export type CustomerDetailParams = {
+  name: string;
+  phone: string;
+  email: string | null;
+};
+
+export type MoreStackParamList = {
+  MoreMenu: undefined;
+  CustomerList: undefined;
+  CustomerDetail: CustomerDetailParams;
+};
+
 export type MerchantTabParamList = {
   Overview: undefined;
   Products: NavigatorScreenParams<ProductsStackParamList>;
   Orders: NavigatorScreenParams<OrdersStackParamList>;
-  More: undefined;
+  More: NavigatorScreenParams<MoreStackParamList>;
 };

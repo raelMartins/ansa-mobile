@@ -9,7 +9,7 @@ import { useTheme } from "../../core/ui/ThemeContext";
 import { OverviewScreen } from "../overview/screens/OverviewScreen";
 import { OrdersStack } from "../orders/OrdersStack";
 import { ProductsStack } from "../products/ProductsStack";
-import { MoreScreen } from "./MoreScreen";
+import { MoreStack } from "./MoreStack";
 import {
   TabIconMore,
   TabIconOrders,
@@ -83,9 +83,10 @@ export function MerchantTabs() {
       />
       <Tab.Screen
         name="More"
-        component={MoreScreen}
+        component={MoreStack}
         options={{
           title: "More",
+          headerShown: false,
           tabBarIcon: ({ color }) => <TabIconMore color={color} size={TAB_ICON} />,
         }}
       />

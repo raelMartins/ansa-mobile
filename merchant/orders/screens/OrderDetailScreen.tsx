@@ -2,12 +2,14 @@
  * Motion: content FadeIn; status update uses button press feedback + inline banner.
  * Loading/error: shared LoadingState/ErrorState; destructive actions use Alert.
  */
-import { useRoute, type RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, type CompositeNavigationProp, type RouteProp } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Image, ScrollView, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { feedback } from "../../../core/feedback/feedback";
-import type { OrdersStackParamList } from "../../../core/navigation/types";
+import type { MerchantTabParamList, OrdersStackParamList } from "../../../core/navigation/types";
 import { LoadingState, ErrorState } from "../../../core/ui/states";
 import { useSession } from "../../../core/session/SessionContext";
 import { useThemedStyles } from "../../../core/ui/themedStyles";
@@ -15,6 +17,7 @@ import { ApiError } from "../../../core/api/errors";
 import { fetchOrder, updateOrderStatus } from "../../api/orders";
 import { fetchProduct } from "../../api/products";
 import { useMerchant } from "../../MerchantContext";
+import { customerIdentityFromOrder, isGuestCustomerEmail } from "../../lib/customers";
 import { formatNairaFromKobo } from "../../lib/money";
 import {
   ORDER_STATUS_LABEL,
@@ -34,6 +37,10 @@ import { useMerchantTabBarInset } from "../../shell/MerchantGlassTabBar";
 import { availableOrderActions, type OrderAction } from "../orderActions";
 
 type Route = RouteProp<OrdersStackParamList, "OrderDetail">;
+type Nav = CompositeNavigationProp<
+  NativeStackNavigationProp<OrdersStackParamList, "OrderDetail">,
+  BottomTabNavigationProp<MerchantTabParamList>
+>;
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("en-NG", {
@@ -53,12 +60,9 @@ function progressSteps(order: MerchantOrder): OrderStatus[] {
   return [...base, "delivered"];
 }
 
-function isGuestEmail(email: string | null): boolean {
-  return !email || email.endsWith("@guest.ansa.local");
-}
-
 export function OrderDetailScreen() {
   const { orderId } = useRoute<Route>().params;
+  const navigation = useNavigation<Nav>();
   const { merchantId } = useMerchant();
   const { api } = useSession();
   const { scheme } = useTheme();
@@ -246,11 +250,23 @@ export function OrderDetailScreen() {
         <Text style={styles.sectionTitle}>Customer</Text>
         <Text style={styles.itemTitle}>{order.customerName}</Text>
         <Text style={styles.itemMeta}>{order.customerPhone}</Text>
-        {!isGuestEmail(order.customerEmail) ? (
+        {!isGuestCustomerEmail(order.customerEmail) ? (
           <Text style={styles.itemMeta}>{order.customerEmail}</Text>
         ) : (
-          <Text style={styles.customerHint}>Guest checkout — customer profile coming in a later update.</Text>
+          <Text style={styles.customerHint}>Guest checkout — grouped by name and phone in Customers.</Text>
         )}
+        <View style={{ marginTop: 10 }}>
+          <MerchantSecondaryButton
+            label="View customer profile"
+            onPress={() => {
+              feedback.tap();
+              navigation.navigate("More", {
+                screen: "CustomerDetail",
+                params: customerIdentityFromOrder(order),
+              });
+            }}
+          />
+        </View>
       </View>
 
       <View style={styles.card}>

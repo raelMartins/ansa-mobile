@@ -215,11 +215,20 @@ export function OverviewScreen() {
                 </Pressable>
               </Animated.View>
               <Animated.View entering={FadeInDown.delay(140).duration(480).springify()} style={styles.metricCard}>
-                <Text style={styles.metricLabel}>Customers</Text>
-                <Text style={styles.metricValue}>{data.customerCount}</Text>
-                <Text style={styles.metricSub}>
-                  {data.newCustomersMonth > 0 ? `${data.newCustomersMonth} new this month` : "Invite your first buyer"}
-                </Text>
+                <Pressable
+                  onPress={() => {
+                    feedback.tap();
+                    navigation.navigate("More", { screen: "CustomerList" });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="View customers"
+                >
+                  <Text style={styles.metricLabel}>Customers</Text>
+                  <Text style={styles.metricValue}>{data.customerCount}</Text>
+                  <Text style={styles.metricSub}>
+                    {data.newCustomersMonth > 0 ? `${data.newCustomersMonth} new this month` : "Invite your first buyer"}
+                  </Text>
+                </Pressable>
               </Animated.View>
             </View>
 

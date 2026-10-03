@@ -3,6 +3,8 @@
  * spring bottom sheet (see ProductSwitcherSheet); sign-out press opacity.
  * Reduced motion: Reanimated entering respects system preference.
  */
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -19,12 +21,12 @@ import type { ThemePreference } from "../../core/ui/theme";
 import { useThemedStyles } from "../../core/ui/themedStyles";
 import { MerchantCard } from "../ui/MerchantCard";
 import { MerchantScreenHeader } from "../ui/MerchantScreenHeader";
+import type { MoreStackParamList } from "../../core/navigation/types";
 import { SoonPill } from "../ui/SoonPill";
 import { merchantRadii } from "../ui/merchantUi";
 import { useMerchantTabBarInset } from "./MerchantGlassTabBar";
 
 const FUTURE = [
-  { title: "Customers", note: "Order history by buyer" },
   { title: "Storefront", note: "Theme and public shop page" },
   { title: "Social", note: "Publish catalog to channels" },
   { title: "WhatsApp", note: "Orders and buyer updates" },
@@ -37,7 +39,17 @@ const APPEARANCE: { id: ThemePreference; label: string }[] = [
   { id: "system", label: "System" },
 ];
 
-function MenuRow({ title, note }: { title: string; note: string }) {
+function MenuRow({
+  title,
+  note,
+  onPress,
+  soon,
+}: {
+  title: string;
+  note: string;
+  onPress?: () => void;
+  soon?: boolean;
+}) {
   const styles = useThemedStyles((c, f) => ({
     row: {
       flexDirection: "row",
@@ -54,19 +66,39 @@ function MenuRow({ title, note }: { title: string; note: string }) {
     chevron: { fontSize: 18, color: c.textMuted, fontFamily: f.regular },
   }));
 
-  return (
-    <View style={styles.row}>
+  const body = (
+    <>
       <View style={styles.textWrap}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.note}>{note}</Text>
       </View>
-      <SoonPill />
+      {soon ? <SoonPill /> : null}
       <Text style={styles.chevron} accessibilityElementsHidden>›</Text>
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable
+        style={styles.row}
+        onPress={() => {
+          feedback.tap();
+          onPress();
+        }}
+        accessibilityRole="button"
+      >
+        {body}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.row}>{body}</View>;
 }
 
+type MoreNav = NativeStackNavigationProp<MoreStackParamList, "MoreMenu">;
+
 export function MoreScreen() {
+  const navigation = useNavigation<MoreNav>();
   const { signOut } = useSession();
   const { scheme, preference, setPreference, colors } = useTheme();
   const { selectedProduct, selectProduct, replayWelcome } = useOnboarding();
@@ -172,8 +204,13 @@ export function MoreScreen() {
       </MerchantCard>
 
       <MerchantCard title="Workspace" delay={180}>
+        <MenuRow
+          title="Customers"
+          note="Order history by buyer"
+          onPress={() => navigation.navigate("CustomerList")}
+        />
         {FUTURE.map((item) => (
-          <MenuRow key={item.title} title={item.title} note={item.note} />
+          <MenuRow key={item.title} title={item.title} note={item.note} soon />
         ))}
       </MerchantCard>
 
