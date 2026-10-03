@@ -4,16 +4,9 @@
  */
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useReducedMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { motion } from "../../experience/motion";
+import { useBottomSheetEnter } from "../../core/ui/useBottomSheetEnter";
 import { feedback } from "../../core/feedback/feedback";
 import { useTheme } from "../../core/ui/ThemeContext";
 import type { Merchant } from "../types";
@@ -32,21 +25,8 @@ export function BusinessSwitcherSheet({ visible, merchants, activeId, onClose, o
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const reduceMotion = useReducedMotion();
-  const [mounted, setMounted] = useState(visible);
-  const t = useSharedValue(0);
   const sheetHeight = Math.min(height * 0.72, 420 + insets.bottom);
-
-  useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      const openMs = reduceMotion ? 180 : motion.duration.sheetOpen;
-      t.value = withTiming(1, { duration: openMs, easing: Easing.out(Easing.cubic) });
-    } else {
-      t.value = withTiming(0, { duration: motion.duration.sheetClose, easing: Easing.in(Easing.cubic) }, (done) => {
-        if (done) runOnJS(setMounted)(false);
-      });
-    }
-  }, [visible, reduceMotion, t]);
+  const { mounted, t } = useBottomSheetEnter(visible, sheetHeight, !!reduceMotion);
 
   const backdrop = useAnimatedStyle(() => ({ opacity: t.value * 0.45 }));
   const sheet = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - t.value) * sheetHeight }] }));

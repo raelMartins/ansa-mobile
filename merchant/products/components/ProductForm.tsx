@@ -88,7 +88,6 @@ export function ProductForm({ values, onChange, onUploadPhoto, photoPreviews, on
 
   return (
     <View style={styles.section}>
-      <Text style={{ fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 16, color: colors.text }}>Product photos</Text>
       <ProductPhotoPicker photos={photoPreviews} maxPhotos={5} onAdd={onUploadPhoto} onRemove={onRemovePhoto} />
 
       <AuthField

@@ -11,7 +11,7 @@ import { useMerchant } from "../../MerchantContext";
 import { formatNairaFromKobo } from "../../lib/money";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import type { MerchantProduct } from "../../types";
-import { MerchantDangerLink, MerchantPrimaryButton, MerchantSecondaryButton } from "../../ui/MerchantButtons";
+import { MerchantMutedLink, MerchantPrimaryButton, MerchantSecondaryButton } from "../../ui/MerchantButtons";
 import { StatusPill } from "../../ui/StatusPill";
 import { merchantRadii } from "../../ui/merchantUi";
 import { feedback } from "../../../core/feedback/feedback";
@@ -110,9 +110,15 @@ export function ProductDetailScreen() {
           </>
         ) : null}
       </View>
-      <MerchantPrimaryButton label="Edit product" onPress={() => navigation.navigate("ProductEdit", { productId })} />
-      <MerchantSecondaryButton label="Share product" disabled onPress={() => undefined} />
-      <MerchantDangerLink label="Archive product" onPress={archive} />
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <MerchantPrimaryButton label="Edit" onPress={() => navigation.navigate("ProductEdit", { productId })} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <MerchantSecondaryButton label="Share" disabled onPress={() => undefined} />
+        </View>
+      </View>
+      <MerchantMutedLink label="Archive" onPress={archive} />
     </ScrollView>
   );
 }

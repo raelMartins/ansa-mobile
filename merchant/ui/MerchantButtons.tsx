@@ -85,3 +85,22 @@ export function MerchantDangerLink({ label, onPress }: { label: string; onPress:
     </Pressable>
   );
 }
+
+export function MerchantMutedLink({ label, onPress }: { label: string; onPress: () => void }) {
+  const styles = useThemedStyles((c, f) => ({
+    hit: { paddingVertical: 12, alignItems: "center", minHeight: 44, justifyContent: "center" },
+    text: { color: c.textMuted, fontSize: 15, fontFamily: f.semiBold },
+  }));
+  return (
+    <Pressable
+      style={styles.hit}
+      onPress={() => {
+        feedback.tap();
+        onPress();
+      }}
+      accessibilityRole="button"
+    >
+      <Text style={styles.text}>{label}</Text>
+    </Pressable>
+  );
+}

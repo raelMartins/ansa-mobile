@@ -5,18 +5,10 @@
  * - Primary interaction: tiles spring on press; disabled tiles shake.
  * - Reduced motion: tiles fade only (ProductTile); sheet keeps a short slide.
  */
-import { useEffect, useState } from "react";
+import { useBottomSheetEnter } from "../ui/useBottomSheetEnter";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useReducedMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { motion } from "../../experience/motion";
 import { useTheme } from "../ui/ThemeContext";
 import { bentoLayout } from "./bento";
 import { ANSA_PRODUCTS, type AnsaProduct, type AnsaProductId } from "./catalog";
@@ -36,24 +28,12 @@ export function ProductSwitcherSheet({ visible, currentId, onClose, onSwitch }: 
   const insets = useSafeAreaInsets();
   const { colors, fonts } = useTheme();
   const reduceMotion = useReducedMotion();
-  const [mounted, setMounted] = useState(visible);
-  const t = useSharedValue(0);
 
   const gridWidth = width - INSET * 2;
   const gridHeight = bentoLayout(ANSA_PRODUCTS, gridWidth, true).height;
   const sheetHeight = Math.min(height * 0.9, gridHeight + 132 + insets.bottom);
 
-  useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      const openMs = reduceMotion ? 180 : motion.duration.sheetOpen;
-      t.value = withTiming(1, { duration: openMs, easing: Easing.out(Easing.cubic) });
-    } else {
-      t.value = withTiming(0, { duration: motion.duration.sheetClose, easing: Easing.in(Easing.cubic) }, (done) => {
-        if (done) runOnJS(setMounted)(false);
-      });
-    }
-  }, [visible, reduceMotion, t]);
+  const { mounted, t } = useBottomSheetEnter(visible, sheetHeight, !!reduceMotion);
 
   const backdrop = useAnimatedStyle(() => ({ opacity: t.value * 0.45 }));
   const sheet = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - t.value) * sheetHeight }] }));
