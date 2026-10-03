@@ -40,6 +40,21 @@ export function TabIconOrders({ color, size }: Props) {
   );
 }
 
+export function TabIconCustomers({ color, size }: Props) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx="12" cy="8" r="3.5" stroke={color} strokeWidth={1.8} fill="none" />
+      <Path
+        d="M5 20 C5 16.5 8 14 12 14 C16 14 19 16.5 19 20"
+        stroke={color}
+        strokeWidth={1.8}
+        fill="none"
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
 export function TabIconMore({ color, size }: Props) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">

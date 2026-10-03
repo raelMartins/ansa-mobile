@@ -3,8 +3,7 @@ import { Platform } from "react-native";
 import type { MoreStackParamList } from "../../core/navigation/types";
 import { brand } from "../../core/ui/brandColors";
 import { useTheme } from "../../core/ui/ThemeContext";
-import { CustomerDetailScreen } from "../customers/screens/CustomerDetailScreen";
-import { CustomerListScreen } from "../customers/screens/CustomerListScreen";
+import { StorefrontPreviewScreen } from "../storefront/screens/StorefrontPreviewScreen";
 import { MoreScreen } from "./MoreScreen";
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -30,8 +29,7 @@ export function MoreStack() {
       }}
     >
       <Stack.Screen name="MoreMenu" component={MoreScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="CustomerList" component={CustomerListScreen} options={{ title: "Customers" }} />
-      <Stack.Screen name="CustomerDetail" component={CustomerDetailScreen} options={{ title: "Customer" }} />
+      <Stack.Screen name="StorefrontPreview" component={StorefrontPreviewScreen} options={{ title: "Storefront preview" }} />
     </Stack.Navigator>
   );
 }

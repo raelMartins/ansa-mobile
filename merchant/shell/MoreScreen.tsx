@@ -27,7 +27,6 @@ import { merchantRadii } from "../ui/merchantUi";
 import { useMerchantTabBarInset } from "./MerchantGlassTabBar";
 
 const FUTURE = [
-  { title: "Storefront", note: "Theme and public shop page" },
   { title: "Social", note: "Publish catalog to channels" },
   { title: "WhatsApp", note: "Orders and buyer updates" },
   { title: "Settings", note: "Business and account" },
@@ -205,9 +204,9 @@ export function MoreScreen() {
 
       <MerchantCard title="Workspace" delay={180}>
         <MenuRow
-          title="Customers"
-          note="Order history by buyer"
-          onPress={() => navigation.navigate("CustomerList")}
+          title="Storefront"
+          note="Preview your public shop page"
+          onPress={() => navigation.navigate("StorefrontPreview")}
         />
         {FUTURE.map((item) => (
           <MenuRow key={item.title} title={item.title} note={item.note} soon />

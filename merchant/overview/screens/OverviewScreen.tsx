@@ -218,7 +218,7 @@ export function OverviewScreen() {
                 <Pressable
                   onPress={() => {
                     feedback.tap();
-                    navigation.navigate("More", { screen: "CustomerList" });
+                    navigation.navigate("Customers", { screen: "CustomerList" });
                   }}
                   accessibilityRole="button"
                   accessibilityLabel="View customers"

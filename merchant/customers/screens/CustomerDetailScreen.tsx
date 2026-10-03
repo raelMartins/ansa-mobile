@@ -1,38 +1,45 @@
 /**
- * Motion: FadeInDown on content; order rows tap with feedback.
+ * Motion: FadeInDown on profile + cards; order rows tap with feedback (Standard).
  */
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, type CompositeNavigationProp, type RouteProp } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { feedback } from "../../../core/feedback/feedback";
-import type { MerchantTabParamList, MoreStackParamList } from "../../../core/navigation/types";
+import type { CustomersStackParamList, MerchantTabParamList } from "../../../core/navigation/types";
 import { LoadingState, ErrorState } from "../../../core/ui/states";
 import { ApiError } from "../../../core/api/errors";
 import { useSession } from "../../../core/session/SessionContext";
 import { useThemedStyles } from "../../../core/ui/themedStyles";
 import { fetchCustomerDetail } from "../../api/customers";
 import { useMerchant } from "../../MerchantContext";
-import { formatCustomerDate, isGuestCustomerEmail } from "../../lib/customers";
+import {
+  customerRelationshipLabel,
+  formatCustomerSince,
+  formatOrderHistoryMeta,
+  isGuestCustomerEmail,
+  isRecentOrder,
+} from "../../lib/customers";
 import { formatNairaFromKobo } from "../../lib/money";
-import { formatOrderTime, orderStatusLabel, orderStatusTone } from "../../lib/orders";
 import type { MerchantCustomerDetail } from "../../types";
 import { InfoBanner } from "../../ui/InfoBanner";
+import { MerchantPrimaryButton } from "../../ui/MerchantButtons";
 import { StatusPill } from "../../ui/StatusPill";
 import { merchantCardBackground, merchantRadii } from "../../ui/merchantUi";
 import { useTheme } from "../../../core/ui/ThemeContext";
 import { useMerchantTabBarInset } from "../../shell/MerchantGlassTabBar";
 
-type Route = RouteProp<MoreStackParamList, "CustomerDetail">;
-type MoreNav = NativeStackNavigationProp<MoreStackParamList, "CustomerDetail">;
-type TabNav = BottomTabNavigationProp<MerchantTabParamList>;
+type Route = RouteProp<CustomersStackParamList, "CustomerDetail">;
+type Nav = CompositeNavigationProp<
+  NativeStackNavigationProp<CustomersStackParamList, "CustomerDetail">,
+  BottomTabNavigationProp<MerchantTabParamList>
+>;
 
 export function CustomerDetailScreen() {
   const { name, phone, email } = useRoute<Route>().params;
-  const navigation = useNavigation<MoreNav>();
-  const tabNavigation = navigation.getParent<TabNav>();
+  const navigation = useNavigation<Nav>();
   const { merchantId } = useMerchant();
   const { api } = useSession();
   const { scheme } = useTheme();
@@ -66,9 +73,30 @@ export function CustomerDetailScreen() {
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
     content: { padding: 20, gap: 16 },
-    head: { gap: 6 },
-    name: { fontSize: 26, fontFamily: f.bold, color: c.text, letterSpacing: -0.3 },
-    meta: { fontSize: 15, fontFamily: f.regular, color: c.textMuted, lineHeight: 21 },
+    profileCard: {
+      backgroundColor: merchantCardBackground(scheme, c),
+      borderRadius: merchantRadii.card,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: c.border,
+      gap: 10,
+    },
+    name: { fontSize: 24, fontFamily: f.bold, color: c.text, letterSpacing: -0.3 },
+    since: { fontSize: 14, fontFamily: f.regular, color: c.textMuted },
+    contact: { fontSize: 15, fontFamily: f.regular, color: c.text, lineHeight: 22 },
+    metricsRow: { flexDirection: "row", gap: 10 },
+    metricCard: {
+      flex: 1,
+      backgroundColor: merchantCardBackground(scheme, c),
+      borderRadius: merchantRadii.card,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      gap: 6,
+    },
+    metricLabel: { fontSize: 13, fontFamily: f.medium, color: c.textMuted },
+    metricValue: { fontSize: 28, fontFamily: f.bold, color: c.text, letterSpacing: -0.5 },
+    metricSub: { fontSize: 12, fontFamily: f.regular, color: c.textMuted, lineHeight: 17 },
     card: {
       backgroundColor: merchantCardBackground(scheme, c),
       borderRadius: merchantRadii.card,
@@ -78,9 +106,9 @@ export function CustomerDetailScreen() {
       gap: 10,
     },
     sectionTitle: { fontSize: 16, fontFamily: f.semiBold, color: c.text },
-    row: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
-    label: { fontSize: 13, fontFamily: f.medium, color: c.textMuted },
-    value: { fontSize: 15, fontFamily: f.semiBold, color: c.text, textAlign: "right", flex: 1 },
+    sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    link: { fontSize: 14, fontFamily: f.semiBold, color: c.accent },
+    address: { fontSize: 15, fontFamily: f.regular, color: c.text, lineHeight: 22 },
     orderRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -92,8 +120,7 @@ export function CustomerDetailScreen() {
     },
     orderRef: { fontSize: 15, fontFamily: f.semiBold, color: c.text },
     orderMeta: { fontSize: 13, fontFamily: f.regular, color: c.textMuted, marginTop: 2 },
-    orderRight: { alignItems: "flex-end", gap: 6 },
-    hint: { fontSize: 13, fontFamily: f.regular, color: c.textMuted, lineHeight: 18 },
+    note: { fontSize: 14, fontFamily: f.regular, color: c.textMuted, lineHeight: 21 },
   }));
 
   if (loading) return <LoadingState label="Loading customer…" />;
@@ -101,6 +128,8 @@ export function CustomerDetailScreen() {
 
   const { customer, orders } = data;
   const guest = customer.isGuest || isGuestCustomerEmail(customer.email);
+  const recentLabel = isRecentOrder(customer.lastOrderAt) ? "today" : formatCustomerSince(customer.lastOrderAt).replace("Customer since ", "");
+  const previewOrders = orders.slice(0, 5);
 
   return (
     <ScrollView
@@ -116,64 +145,73 @@ export function CustomerDetailScreen() {
         />
       }
     >
-      <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.head}>
+      <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.profileCard}>
         <Text style={styles.name}>{customer.name}</Text>
-        <Text style={styles.meta}>{customer.phone}</Text>
-        {!guest && customer.email ? <Text style={styles.meta}>{customer.email}</Text> : null}
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-          <StatusPill label={guest ? "Guest checkout" : "Buyer"} tone={guest ? "orderPending" : "newOrder"} />
-        </View>
-        {guest ? (
-          <Text style={styles.hint}>Guest buyers are grouped by name and phone from checkout. No ansa account yet.</Text>
-        ) : null}
+        <StatusPill label={customerRelationshipLabel(customer.orders)} tone={customer.orders > 1 ? "ready" : "newOrder"} />
+        <Text style={styles.since}>{formatCustomerSince(customer.firstOrderAt)}</Text>
+        <Text style={styles.contact}>WhatsApp · {customer.phone}</Text>
+        {!guest && customer.email ? <Text style={styles.contact}>Email · {customer.email}</Text> : null}
+        <MerchantPrimaryButton label="Message on WhatsApp" disabled onPress={() => undefined} />
       </Animated.View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Relationship</Text>
-        <View style={styles.row}>
-          <Text style={styles.label}>Orders</Text>
-          <Text style={styles.value}>{customer.orders}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Total spent (paid)</Text>
-          <Text style={styles.value}>{formatNairaFromKobo(customer.spentKobo)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>First order</Text>
-          <Text style={styles.value}>{formatCustomerDate(customer.firstOrderAt)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Latest order</Text>
-          <Text style={styles.value}>{formatCustomerDate(customer.lastOrderAt)}</Text>
-        </View>
+      <View style={styles.metricsRow}>
+        <Animated.View entering={FadeInDown.delay(60).duration(400).springify()} style={styles.metricCard}>
+          <Text style={styles.metricLabel}>Paid orders</Text>
+          <Text style={styles.metricValue}>{customer.paidOrders}</Text>
+          <Text style={styles.metricSub}>Most recent · {recentLabel}</Text>
+        </Animated.View>
+        <Animated.View entering={FadeInDown.delay(100).duration(400).springify()} style={styles.metricCard}>
+          <Text style={styles.metricLabel}>Total spent</Text>
+          <Text style={styles.metricValue}>{formatNairaFromKobo(customer.spentKobo)}</Text>
+          <Text style={styles.metricSub}>Lifetime paid total</Text>
+        </Animated.View>
       </View>
 
+      {customer.latestDeliveryAddress ? (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Delivery address</Text>
+          <Text style={styles.address}>{customer.latestDeliveryAddress}</Text>
+        </View>
+      ) : null}
+
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Orders</Text>
-        {orders.length === 0 ? (
-          <Text style={styles.hint}>No orders found for this customer.</Text>
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionTitle}>Order history</Text>
+          {orders.length > previewOrders.length ? (
+            <Pressable onPress={() => feedback.tap()} hitSlop={8}>
+              <Text style={styles.link}>View all →</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {previewOrders.length === 0 ? (
+          <Text style={styles.note}>No orders yet.</Text>
         ) : (
-          orders.map((order) => (
+          previewOrders.map((order) => (
             <Pressable
               key={order.id}
               style={styles.orderRow}
               onPress={() => {
                 feedback.tap();
-                tabNavigation?.navigate("Orders", { screen: "OrderDetail", params: { orderId: order.id } });
+                navigation.navigate("Orders", { screen: "OrderDetail", params: { orderId: order.id } });
               }}
               accessibilityRole="button"
             >
               <View style={{ flex: 1 }}>
                 <Text style={styles.orderRef}>#{order.reference}</Text>
-                <Text style={styles.orderMeta}>{formatOrderTime(order.createdAt)}</Text>
+                <Text style={styles.orderMeta}>{formatOrderHistoryMeta(order)}</Text>
               </View>
-              <View style={styles.orderRight}>
-                <StatusPill label={orderStatusLabel(order)} tone={orderStatusTone(order)} />
-                <Text style={styles.orderRef}>{formatNairaFromKobo(order.totalKobo)}</Text>
-              </View>
+              <Text style={styles.orderRef}>{formatNairaFromKobo(order.totalKobo)}</Text>
             </Pressable>
           ))
         )}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Merchant note</Text>
+        <Text style={styles.note}>
+          Private team notes are not available yet. You will be able to save preferences like sizes and delivery
+          instructions here in a later update.
+        </Text>
       </View>
 
       {orders.length >= 100 ? (

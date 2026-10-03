@@ -21,15 +21,20 @@ export type CustomerDetailParams = {
   email: string | null;
 };
 
-export type MoreStackParamList = {
-  MoreMenu: undefined;
+export type CustomersStackParamList = {
   CustomerList: undefined;
   CustomerDetail: CustomerDetailParams;
+};
+
+export type MoreStackParamList = {
+  MoreMenu: undefined;
+  StorefrontPreview: undefined;
 };
 
 export type MerchantTabParamList = {
   Overview: undefined;
   Products: NavigatorScreenParams<ProductsStackParamList>;
   Orders: NavigatorScreenParams<OrdersStackParamList>;
+  Customers: NavigatorScreenParams<CustomersStackParamList>;
   More: NavigatorScreenParams<MoreStackParamList>;
 };

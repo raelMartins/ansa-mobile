@@ -7,10 +7,12 @@ import { Wordmark } from "../../core/ui/Wordmark";
 import { brand } from "../../core/ui/brandColors";
 import { useTheme } from "../../core/ui/ThemeContext";
 import { OverviewScreen } from "../overview/screens/OverviewScreen";
+import { CustomersStack } from "../customers/CustomersStack";
 import { OrdersStack } from "../orders/OrdersStack";
 import { ProductsStack } from "../products/ProductsStack";
 import { MoreStack } from "./MoreStack";
 import {
+  TabIconCustomers,
   TabIconMore,
   TabIconOrders,
   TabIconOverview,
@@ -79,6 +81,15 @@ export function MerchantTabs() {
           title: "Orders",
           headerShown: false,
           tabBarIcon: ({ color }) => <TabIconOrders color={color} size={TAB_ICON} />,
+        }}
+      />
+      <Tab.Screen
+        name="Customers"
+        component={CustomersStack}
+        options={{
+          title: "Customers",
+          headerShown: false,
+          tabBarIcon: ({ color }) => <TabIconCustomers color={color} size={TAB_ICON} />,
         }}
       />
       <Tab.Screen

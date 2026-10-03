@@ -4,6 +4,7 @@ import type { MerchantCustomer } from "../types";
 function customer(partial: Partial<MerchantCustomer> & Pick<MerchantCustomer, "name" | "phone" | "orders">): MerchantCustomer {
   return {
     email: null,
+    paidOrders: partial.orders ?? 1,
     spentKobo: 1000,
     firstOrderAt: new Date().toISOString(),
     lastOrderAt: new Date().toISOString(),

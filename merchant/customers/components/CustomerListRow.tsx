@@ -2,7 +2,7 @@ import { Pressable, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { feedback } from "../../../core/feedback/feedback";
 import { useThemedStyles } from "../../../core/ui/themedStyles";
-import { customerLocationLabel, formatCustomerDate, isGuestCustomerEmail } from "../../lib/customers";
+import { customerRelationshipLabel, formatCustomerDate, isGuestCustomerEmail } from "../../lib/customers";
 import { formatNairaFromKobo } from "../../lib/money";
 import type { CustomerIdentity, MerchantCustomer } from "../../types";
 import { StatusPill } from "../../ui/StatusPill";
@@ -51,12 +51,16 @@ export function CustomerListRow({ customer, index, onPress }: Props) {
         <View style={styles.left}>
           <Text style={styles.name}>{customer.name}</Text>
           <Text style={styles.meta}>
-            {customerLocationLabel(customer.orders)} · Last order {formatCustomerDate(customer.lastOrderAt)}
+            {customer.orders} order{customer.orders === 1 ? "" : "s"} · Last order {formatCustomerDate(customer.lastOrderAt)}
           </Text>
           <Text style={styles.meta}>{customer.phone}</Text>
         </View>
         <View style={styles.right}>
-          {isGuestCustomerEmail(customer.email) ? <StatusPill label="Guest" tone="orderPending" /> : null}
+          {customer.orders > 1 ? (
+            <StatusPill label={customerRelationshipLabel(customer.orders)} tone="ready" />
+          ) : isGuestCustomerEmail(customer.email) ? (
+            <StatusPill label="Guest" tone="orderPending" />
+          ) : null}
           <Text style={styles.amount}>{formatNairaFromKobo(customer.spentKobo)}</Text>
         </View>
       </Pressable>

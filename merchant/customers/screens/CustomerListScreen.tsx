@@ -7,7 +7,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 import { useNetworkStatus } from "../../../core/network/useNetworkStatus";
-import type { MoreStackParamList } from "../../../core/navigation/types";
+import type { CustomersStackParamList } from "../../../core/navigation/types";
+import { useMerchant } from "../../MerchantContext";
 import { SegmentedControl } from "../../../core/ui/SegmentedControl";
 import { useTheme } from "../../../core/ui/ThemeContext";
 import { useThemedStyles } from "../../../core/ui/themedStyles";
@@ -21,10 +22,11 @@ import { CustomerListRow } from "../components/CustomerListRow";
 import { filterCounts, filterCustomers, type CustomerFilter } from "../customerFilters";
 import { useCustomers } from "../useCustomers";
 
-type Nav = NativeStackNavigationProp<MoreStackParamList, "CustomerList">;
+type Nav = NativeStackNavigationProp<CustomersStackParamList, "CustomerList">;
 
 export function CustomerListScreen() {
   const navigation = useNavigation<Nav>();
+  const { merchant } = useMerchant();
   const { isOffline, isReady: networkReady } = useNetworkStatus();
   const { colors } = useTheme();
   const { state, reload } = useCustomers();
@@ -44,6 +46,7 @@ export function CustomerListScreen() {
     content: { padding: 20, gap: 14 },
     title: { fontSize: 28, fontFamily: f.bold, color: c.text, letterSpacing: -0.4 },
     subtitle: { fontSize: 14, fontFamily: f.regular, color: c.textMuted, lineHeight: 20, marginTop: -6 },
+    business: { fontSize: 14, fontFamily: f.medium, color: c.textMuted, marginTop: -4 },
     search: {
       borderWidth: 1,
       borderColor: c.border,
@@ -82,6 +85,12 @@ export function CustomerListScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.title}>Customers</Text>
+      {merchant ? (
+        <Text style={styles.business}>
+          {merchant.name}
+          {merchant.location ? ` · ${merchant.location}` : ""}
+        </Text>
+      ) : null}
       <Text style={styles.subtitle}>People who have ordered from your shop.</Text>
 
       {networkReady && isOffline ? (

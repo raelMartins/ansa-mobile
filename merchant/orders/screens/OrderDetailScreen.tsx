@@ -260,7 +260,7 @@ export function OrderDetailScreen() {
             label="View customer profile"
             onPress={() => {
               feedback.tap();
-              navigation.navigate("More", {
+              navigation.navigate("Customers", {
                 screen: "CustomerDetail",
                 params: customerIdentityFromOrder(order),
               });

@@ -127,9 +127,35 @@ export type MerchantCustomer = {
   phone: string;
   email: string | null;
   orders: number;
+  paidOrders: number;
   spentKobo: number;
   firstOrderAt: string;
   lastOrderAt: string;
+  latestDeliveryAddress?: string | null;
+};
+
+export type PublicStorefrontMerchant = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  category: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  location: string | null;
+  logoUrl: string | null;
+  coverUrl: string | null;
+};
+
+export type PublicStorefrontProduct = {
+  id: string;
+  title: string;
+  description: string | null;
+  priceKobo: number;
+  slug: string;
+  imageUrls: string[];
+  category: string | null;
+  qtyAvailable: number;
 };
 
 export type MerchantCustomerDetail = {
