@@ -24,3 +24,76 @@ export type CreateMerchantInput = {
   location?: string;
   onboardingCompleted?: boolean;
 };
+
+export type ProductStatus = "draft" | "published" | "archived";
+
+export type MerchantProduct = {
+  id: string;
+  merchantId: string;
+  title: string;
+  description: string | null;
+  priceKobo: number;
+  compareAtKobo: number | null;
+  currency: string;
+  status: ProductStatus;
+  slug: string;
+  imageUrls: string[];
+  kind: "product" | "service";
+  qtyAvailable: number;
+  qtySold: number;
+  sku: string | null;
+  category: string | null;
+  durationMinutes: number | null;
+  availabilityNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateProductInput = {
+  title: string;
+  description?: string;
+  priceKobo: number;
+  status?: "draft" | "published";
+  imageUrls?: string[];
+  qtyAvailable?: number;
+  sku?: string | null;
+  category?: string | null;
+};
+
+export type UpdateProductInput = Partial<CreateProductInput> & { status?: ProductStatus };
+
+export type MerchantOrderPublic = {
+  id: string;
+  reference: string;
+  customerName: string;
+  customerPhone: string;
+  totalKobo: number;
+  paymentStatus: "pending" | "paid" | "failed";
+  orderStatus: string;
+  createdAt: string;
+};
+
+export type MerchantOverview = {
+  merchant: {
+    id: string;
+    name: string;
+    slug: string;
+    location: string | null;
+    category: string | null;
+  };
+  salesKobo: number;
+  salesMonthKobo: number;
+  salesMonthDeltaPct: number | null;
+  soldOrdersMonth: number;
+  orders: number;
+  paidOrders: number;
+  toFulfill: number;
+  readyForPickup: number;
+  customerCount: number;
+  newCustomersMonth: number;
+  products: number;
+  published: number;
+  lowStock: number;
+  recentOrders: MerchantOrderPublic[];
+  generatedAt: string;
+};

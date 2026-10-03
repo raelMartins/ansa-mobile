@@ -10,6 +10,11 @@ jest.mock("expo-linear-gradient", () => ({
   LinearGradient: "LinearGradient",
 }));
 
+jest.mock("@react-native-community/netinfo", () => ({
+  addEventListener: () => () => undefined,
+  fetch: async () => ({ isConnected: true, isInternetReachable: true }),
+}));
+
 jest.mock("react-native-gesture-handler", () => {
   const { View } = require("react-native");
   return {

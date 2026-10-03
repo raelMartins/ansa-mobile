@@ -32,7 +32,7 @@ describe("bootstrapMerchant", () => {
   it("returns ready when a merchant exists", async () => {
     const api = apiWith(async () => ({ merchants: [merchant] }));
     const result = await bootstrapMerchant(api);
-    expect(result).toEqual({ status: "ready", merchant });
+    expect(result).toEqual({ status: "ready", merchant, merchants: [merchant] });
   });
 
   it("returns missing when list is empty", async () => {

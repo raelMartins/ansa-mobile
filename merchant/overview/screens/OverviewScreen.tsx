@@ -1,112 +1,33 @@
 /**
- * Motion: header + cards FadeInDown stagger; quick actions subtle press scale via opacity.
- * Reduced motion: entering animations shorten via Reanimated system setting.
+ * Motion spec (Standard):
+ * - Enter: header + cards FadeInDown stagger on first load.
+ * - Loading: skeleton blocks fade in; no hard cut.
+ * - Error: cached metrics stay visible; retry button press uses primary feedback.
+ * - Primary interactions: quick actions navigate with tab transition; business sheet springs up.
+ * - Reduced motion: Reanimated entering animations respect system setting.
  */
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useState } from "react";
+import { useNetworkStatus } from "../../../core/network/useNetworkStatus";
+import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { brand } from "../../../core/ui/brandColors";
-import { useTheme } from "../../../core/ui/ThemeContext";
+import { feedback } from "../../../core/feedback/feedback";
+import type { MerchantTabParamList } from "../../../core/navigation/types";
 import { useThemedStyles } from "../../../core/ui/themedStyles";
 import { useMerchant } from "../../MerchantContext";
-import { MerchantCard } from "../../ui/MerchantCard";
-import { MerchantScreenHeader } from "../../ui/MerchantScreenHeader";
-import { SoonPill } from "../../ui/SoonPill";
-import { merchantRadii } from "../../ui/merchantUi";
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  const styles = useThemedStyles((c, f) => ({
-    row: { gap: 4 },
-    label: {
-      fontSize: 12,
-      fontFamily: f.medium,
-      color: c.textMuted,
-      letterSpacing: 0.4,
-      textTransform: "uppercase",
-    },
-    value: { fontSize: 16, fontFamily: f.regular, color: c.text, lineHeight: 22 },
-  }));
-  return (
-    <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
-    </View>
-  );
-}
-
-function QuickAction({
-  label,
-  note,
-  disabled,
-  delay,
-}: {
-  label: string;
-  note: string;
-  disabled?: boolean;
-  delay: number;
-}) {
-  const styles = useThemedStyles((c, f) => ({
-    action: {
-      flex: 1,
-      minWidth: 140,
-      padding: 14,
-      borderRadius: merchantRadii.card,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.bg,
-      gap: 6,
-      opacity: disabled ? 0.72 : 1,
-    },
-    label: { fontSize: 15, fontFamily: f.semiBold, color: c.text },
-    note: { fontSize: 13, fontFamily: f.regular, color: c.textMuted, lineHeight: 18 },
-  }));
-
-  return (
-    <Animated.View entering={FadeInDown.delay(delay).duration(420).springify()}>
-      <Pressable
-        style={styles.action}
-        disabled={disabled}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !!disabled }}
-      >
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.note}>{note}</Text>
-        {disabled ? <SoonPill /> : null}
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-function SetupRow({ done, label }: { done: boolean; label: string }) {
-  const { scheme } = useTheme();
-  const styles = useThemedStyles((c, f) => ({
-    row: { flexDirection: "row", alignItems: "center", gap: 12 },
-    dot: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      borderWidth: 2,
-      borderColor: done ? brand.forest : c.border,
-      backgroundColor: done ? (scheme === "dark" ? brand.honey : brand.forest) : "transparent",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    check: { color: scheme === "dark" ? brand.forest : c.onAccent, fontSize: 12, fontFamily: f.semiBold },
-    label: {
-      flex: 1,
-      fontSize: 15,
-      fontFamily: f.regular,
-      color: done ? c.textMuted : c.text,
-      textDecorationLine: done ? "line-through" : "none",
-    },
-  }));
-
-  return (
-    <View style={styles.row}>
-      <View style={styles.dot}>{done ? <Text style={styles.check}>✓</Text> : null}</View>
-      <Text style={styles.label}>{label}</Text>
-    </View>
-  );
-}
+import { formatNairaFromKobo } from "../../lib/money";
+import { formatOrderTime, orderStatusLabel, orderStatusTone } from "../../lib/orders";
+import { BusinessSwitcherSheet } from "../../shell/BusinessSwitcherSheet";
+import { InfoBanner } from "../../ui/InfoBanner";
+import { MerchantPrimaryButton, MerchantSecondaryButton } from "../../ui/MerchantButtons";
+import { merchantCardBackground, merchantRadii } from "../../ui/merchantUi";
+import { IconNotificationBell } from "../../ui/MerchantHeaderIcons";
+import { OfflineBanner } from "../../ui/OfflineBanner";
+import { StatusPill } from "../../ui/StatusPill";
+import { OverviewSkeleton } from "../OverviewSkeleton";
+import { useOverview } from "../useOverview";
+import { useTheme } from "../../../core/ui/ThemeContext";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -115,77 +36,256 @@ function greeting(): string {
   return "Good evening";
 }
 
-function weekdayLabel(): string {
-  return new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "short" });
+function monthLabel(): string {
+  return new Date().toLocaleDateString("en-NG", { month: "long" });
 }
 
+function prevMonthLabel(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  return d.toLocaleDateString("en-NG", { month: "long" });
+}
+
+type Nav = BottomTabNavigationProp<MerchantTabParamList, "Overview">;
+
 export function OverviewScreen() {
-  const { merchant } = useMerchant();
+  const navigation = useNavigation<Nav>();
+  const { merchant, merchants, switchMerchant } = useMerchant();
+  const { scheme, colors, fonts } = useTheme();
+  const { state, refresh, retry } = useOverview();
+  const { isOffline, isReady: networkReady } = useNetworkStatus();
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
   const styles = useThemedStyles((c, f) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, gap: 16, paddingBottom: 36 },
-    actions: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-    cardBody: { gap: 14 },
-    hint: { fontSize: 14, fontFamily: f.regular, lineHeight: 20, color: c.textMuted },
-    slug: {
-      fontSize: 15,
-      fontFamily: f.medium,
-      color: c.text,
-      backgroundColor: c.bg,
+    content: { paddingHorizontal: 20, paddingBottom: 32, gap: 16 },
+    businessRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
+    businessBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, minHeight: 44 },
+    businessText: { fontSize: 14, fontFamily: f.medium, color: c.textMuted },
+    bell: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+    greeting: { fontSize: 26, fontFamily: f.semiBold, color: c.text, letterSpacing: -0.4, lineHeight: 32 },
+    subGreeting: { fontSize: 15, fontFamily: f.regular, color: c.textMuted, lineHeight: 22, marginTop: 6 },
+    hero: {
+      backgroundColor: c.accent,
+      borderRadius: merchantRadii.card,
+      padding: 20,
+      gap: 8,
+    },
+    heroLabel: { fontSize: 14, fontFamily: f.medium, color: c.onAccent, opacity: 0.9 },
+    heroValue: { fontSize: 32, fontFamily: f.bold, color: c.onAccent, letterSpacing: -0.5 },
+    heroMeta: { fontSize: 13, fontFamily: f.regular, color: c.onAccent, opacity: 0.85 },
+    metricsRow: { flexDirection: "row", gap: 10 },
+    metricCard: {
+      flex: 1,
+      backgroundColor: merchantCardBackground(scheme, c),
+      borderRadius: merchantRadii.card,
+      padding: 16,
       borderWidth: 1,
       borderColor: c.border,
-      borderRadius: merchantRadii.button,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
+      gap: 6,
     },
+    metricLabel: { fontSize: 13, fontFamily: f.medium, color: c.textMuted },
+    metricValue: { fontSize: 22, fontFamily: f.bold, color: c.text },
+    metricSub: { fontSize: 12, fontFamily: f.regular, color: c.textMuted, lineHeight: 17 },
+    actionsRow: { flexDirection: "row", gap: 10 },
+    sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    sectionTitle: { fontSize: 18, fontFamily: f.semiBold, color: c.text },
+    link: { fontSize: 14, fontFamily: f.semiBold, color: c.accent },
+    orderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      gap: 12,
+    },
+    orderId: { fontSize: 15, fontFamily: f.semiBold, color: c.text },
+    orderMeta: { fontSize: 13, fontFamily: f.regular, color: c.textMuted },
+    orderRight: { alignItems: "flex-end", gap: 6 },
+    orderAmount: { fontSize: 15, fontFamily: f.semiBold, color: c.text },
+    footer: { fontSize: 12, fontFamily: f.regular, color: c.textMuted, textAlign: "center", marginTop: 8 },
+    errorBox: { alignItems: "center", gap: 12, paddingVertical: 20 },
+    errorTitle: { fontSize: 18, fontFamily: f.semiBold, color: c.text, textAlign: "center" },
+    errorBody: { fontSize: 15, fontFamily: f.regular, color: c.textMuted, textAlign: "center", lineHeight: 22 },
+    cachedLabel: { fontSize: 12, fontFamily: f.medium, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4 },
   }));
 
-  if (!merchant) {
-    return null;
-  }
+  if (!merchant) return null;
 
-  const profileDone = Boolean(merchant.description && merchant.phone);
-  const storefrontDone = Boolean(merchant.slug);
+  const data = state.kind === "ready" ? state.data : state.kind === "error" ? state.cached : null;
+  const loading = state.kind === "loading";
+  const error = state.kind === "error";
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  };
+
+  const salesDelta =
+    data?.salesMonthDeltaPct != null && data.salesMonthDeltaPct !== 0
+      ? `${data.salesMonthDeltaPct > 0 ? "+" : ""}${data.salesMonthDeltaPct}% vs ${prevMonthLabel()}`
+      : data && data.salesMonthKobo === 0
+        ? `No paid sales yet in ${monthLabel()}`
+        : `Sales in ${monthLabel()}`;
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <MerchantScreenHeader
-        eyebrow={`${greeting()} · ${weekdayLabel()}`}
-        title={merchant.name}
-        subtitle={merchant.category ?? "Your merchant workspace"}
+    <>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
+      >
+        <View style={styles.businessRow}>
+          <Pressable
+            style={styles.businessBtn}
+            onPress={() => {
+              feedback.tap();
+              setSwitcherOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Switch business"
+          >
+            <Text style={styles.businessText}>
+              {merchant.name}
+              {merchant.location ? ` · ${merchant.location}` : ""}
+            </Text>
+            <Text style={styles.businessText}>▾</Text>
+          </Pressable>
+          <Pressable
+            style={styles.bell}
+            accessibilityLabel="Notifications"
+            accessibilityRole="button"
+            onPress={() => feedback.tap()}
+          >
+            <IconNotificationBell color={colors.textMuted} size={22} />
+          </Pressable>
+        </View>
+
+        {networkReady && isOffline ? (
+          <OfflineBanner detail="You can browse saved data. Pull to refresh when you're back online." />
+        ) : null}
+
+        <Animated.View entering={FadeInDown.duration(420).springify()}>
+          <Text style={styles.greeting}>{greeting()}.</Text>
+          <Text style={styles.subGreeting}>
+            {data && data.salesMonthKobo > 0
+              ? "Your shop is growing. Here's where things stand today."
+              : "Here's where things stand today. Add products to start selling."}
+          </Text>
+        </Animated.View>
+
+        {loading ? <OverviewSkeleton /> : null}
+
+        {error && !data ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorTitle}>{state.message}</Text>
+            <Text style={styles.errorBody}>Check your connection and try again.</Text>
+            <MerchantPrimaryButton label="Try again" onPress={() => void retry()} />
+          </View>
+        ) : null}
+
+        {data ? (
+          <>
+            {error ? (
+              <InfoBanner variant="warning">
+                Showing your last saved overview. Pull down or tap Try again to refresh.
+              </InfoBanner>
+            ) : null}
+
+            <Animated.View entering={FadeInDown.delay(60).duration(480).springify()} style={styles.hero}>
+              <Text style={styles.heroLabel}>Sales this month</Text>
+              <Text style={styles.heroValue}>{formatNairaFromKobo(data.salesMonthKobo)}</Text>
+              <Text style={styles.heroMeta}>
+                {salesDelta}
+                {data.soldOrdersMonth > 0 ? ` · ${data.soldOrdersMonth} sold orders` : ""}
+              </Text>
+            </Animated.View>
+
+            <View style={styles.metricsRow}>
+              <Animated.View entering={FadeInDown.delay(100).duration(480).springify()} style={styles.metricCard}>
+                <Text style={styles.metricLabel}>To fulfill</Text>
+                <Text style={styles.metricValue}>{data.toFulfill}</Text>
+                <Text style={styles.metricSub}>
+                  {data.readyForPickup > 0 ? `${data.readyForPickup} ready for pickup` : "No orders waiting"}
+                </Text>
+              </Animated.View>
+              <Animated.View entering={FadeInDown.delay(140).duration(480).springify()} style={styles.metricCard}>
+                <Text style={styles.metricLabel}>Customers</Text>
+                <Text style={styles.metricValue}>{data.customerCount}</Text>
+                <Text style={styles.metricSub}>
+                  {data.newCustomersMonth > 0 ? `${data.newCustomersMonth} new this month` : "Invite your first buyer"}
+                </Text>
+              </Animated.View>
+            </View>
+
+            <View style={styles.actionsRow}>
+              <View style={{ flex: 1 }}>
+                <MerchantPrimaryButton
+                  label="+ Add product"
+                  onPress={() => navigation.navigate("Products", { screen: "ProductAdd" })}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <MerchantSecondaryButton label="View orders" onPress={() => navigation.navigate("Orders")} />
+              </View>
+            </View>
+
+            {data.readyForPickup > 0 ? (
+              <InfoBanner variant="success">
+                {`${data.readyForPickup} order${data.readyForPickup === 1 ? "" : "s"} ready to go. Arrange pickup when you are set.`}
+              </InfoBanner>
+            ) : null}
+
+            <View style={{ gap: 8 }}>
+              <View style={styles.sectionHead}>
+                <Text style={styles.sectionTitle}>Recent orders</Text>
+                <Pressable onPress={() => navigation.navigate("Orders")} hitSlop={8}>
+                  <Text style={styles.link}>View all +</Text>
+                </Pressable>
+              </View>
+              {data.recentOrders.length === 0 ? (
+                <Text style={styles.metricSub}>No orders yet — share your storefront when you are ready.</Text>
+              ) : (
+                data.recentOrders.map((order) => (
+                  <View key={order.id} style={styles.orderRow}>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={styles.orderId}>#{order.reference}</Text>
+                      <Text style={styles.orderMeta}>
+                        {order.customerName} · {formatOrderTime(order.createdAt)}
+                      </Text>
+                    </View>
+                    <View style={styles.orderRight}>
+                      <StatusPill label={orderStatusLabel(order)} tone={orderStatusTone(order)} />
+                      <Text style={styles.orderAmount}>{formatNairaFromKobo(order.totalKobo)}</Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+
+            <Text style={styles.footer}>
+              Last updated{" "}
+              {new Date(data.generatedAt).toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" })}
+            </Text>
+
+            {error ? (
+              <MerchantSecondaryButton label="Try again" onPress={() => void retry()} />
+            ) : null}
+          </>
+        ) : null}
+      </ScrollView>
+
+      <BusinessSwitcherSheet
+        visible={switcherOpen}
+        merchants={merchants}
+        activeId={merchant.id}
+        onClose={() => setSwitcherOpen(false)}
+        onSelect={(m) => void switchMerchant(m.id)}
       />
-
-      <View style={styles.actions}>
-        <QuickAction label="Share storefront" note="Copy your shop link" disabled delay={80} />
-        <QuickAction label="Add product" note="Catalog tab next" disabled delay={140} />
-      </View>
-
-      <MerchantCard title="Get set up" delay={200}>
-        <View style={styles.cardBody}>
-          <SetupRow done={profileDone} label="Complete your business profile" />
-          <SetupRow done={storefrontDone} label="Storefront link is live" />
-          <SetupRow done={false} label="Add your first product" />
-        </View>
-      </MerchantCard>
-
-      <MerchantCard title="Business profile" delay={260}>
-        <View style={styles.cardBody}>
-          {merchant.description ? <DetailRow label="About" value={merchant.description} /> : null}
-          {merchant.phone ? <DetailRow label="Phone" value={merchant.phone} /> : null}
-          {merchant.whatsapp ? <DetailRow label="WhatsApp" value={merchant.whatsapp} /> : null}
-          {merchant.location ? <DetailRow label="Location" value={merchant.location} /> : null}
-          {!merchant.description && !merchant.phone && !merchant.whatsapp && !merchant.location ? (
-            <Text style={styles.hint}>Add more details from Settings when it ships — your basics are saved.</Text>
-          ) : null}
-        </View>
-      </MerchantCard>
-
-      <MerchantCard title="Storefront" delay={320}>
-        <Text style={styles.slug} selectable>/shop/{merchant.slug}</Text>
-        <Text style={styles.hint}>
-          Buyers open this link on the web — no app required. Share it on WhatsApp, Instagram, or anywhere you sell.
-        </Text>
-      </MerchantCard>
-    </ScrollView>
+    </>
   );
 }

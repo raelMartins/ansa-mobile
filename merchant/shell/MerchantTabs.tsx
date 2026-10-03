@@ -7,6 +7,7 @@ import { Wordmark } from "../../core/ui/Wordmark";
 import { brand } from "../../core/ui/brandColors";
 import { useTheme } from "../../core/ui/ThemeContext";
 import { OverviewScreen } from "../overview/screens/OverviewScreen";
+import { ProductsStack } from "../products/ProductsStack";
 import { ModuleComingSoonScreen } from "./ModuleComingSoonScreen";
 import { MoreScreen } from "./MoreScreen";
 import {
@@ -66,9 +67,10 @@ export function MerchantTabs() {
       />
       <Tab.Screen
         name="Products"
-        children={() => <ModuleComingSoonScreen module="products" />}
+        component={ProductsStack}
         options={{
           title: "Products",
+          headerShown: false,
           tabBarIcon: ({ color }) => <TabIconProducts color={color} size={TAB_ICON} />,
         }}
       />
