@@ -1,11 +1,13 @@
 import * as SecureStore from "expo-secure-store";
+import { isProductId, type AnsaProductId } from "../products/catalog";
+
+export type { AnsaProductId } from "../products/catalog";
 
 const INTRO_KEY = "ansa.mobile.ecosystemIntroComplete";
 const PRODUCT_KEY = "ansa.mobile.selectedProductId";
 
-export type AnsaProductId = "merchant" | "delivery" | "jobs" | "check" | "locate" | "meets";
-
 export type OnboardingSnapshot = {
+  /** The full welcome cinematic has been seen once on this install. */
   introComplete: boolean;
   selectedProduct: AnsaProductId | null;
 };
@@ -31,9 +33,7 @@ export async function loadOnboarding(): Promise<OnboardingSnapshot> {
   let selectedProduct: AnsaProductId | null = null;
   try {
     const raw = await SecureStore.getItemAsync(PRODUCT_KEY);
-    if (raw === "merchant" || raw === "delivery" || raw === "jobs" || raw === "check" || raw === "locate" || raw === "meets") {
-      selectedProduct = raw;
-    }
+    selectedProduct = isProductId(raw) ? raw : null;
   } catch {
     selectedProduct = null;
   }
@@ -52,10 +52,4 @@ export async function setSelectedProduct(product: AnsaProductId): Promise<void> 
 export async function resetWelcomeFlow(): Promise<void> {
   await writeFlag(INTRO_KEY, false);
   await SecureStore.deleteItemAsync(PRODUCT_KEY);
-}
-
-/** Dev / testing: full welcome + sign-in again. */
-export async function resetWelcomeFlowAndSignOut(signOut: () => Promise<void>): Promise<void> {
-  await resetWelcomeFlow();
-  await signOut();
 }

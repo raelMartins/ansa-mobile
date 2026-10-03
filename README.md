@@ -1,12 +1,16 @@
 # ansa mobile
 
-Expo React Native **consumer ansa app** (ecosystem shell). **Merchant** is the first active product; Jobs, Delivery, Check, and others appear in the product picker as they ship. Consumes `ansa-api` at `/v1`.
+Expo React Native **consumer ansa app** (ecosystem shell). **Merchant** is the only enabled product; delivery, jobs, check, locate, meets and health show as "Coming soon" in the product grid. Consumes `ansa-api` at `/v1`.
 
 ## Welcome flow
 
-Cold start: **splash → ecosystem slideshow → sign in / sign up → product picker → merchant** (expansion transition into the dashboard).
+One continuous flow on a single canvas: **native splash (icon over wordmark) → dot → icon trace → wordmark trace → "What [wordmark] are you looking for today?" → product grid → login rises from below → dashboard in the product's colours.** Returning signed-in users get a short splash straight to the dashboard. Spec: `../../docs/mobile-welcome-motion-spec.md`.
 
-**Replay the full flow (dev):** More → **Sign out & replay from splash** — or **Replay welcome flow** while signed in (re-shows intro + product picker; sign out first if you need auth screens again).
+**Replay (dev):** at the bottom of More, **Replay welcome flow (dev)** replays the cinematic without login (you stay signed in). **Sign out & replay from splash (dev)** replays it with login. Switch product or theme from More → Product / Appearance.
+
+The custom native splash needs a development or release build; Expo Go shows its own splash.
+
+**Brand assets:** after changing `assets/brand/ansa_icon.svg` or `ansa.svg`, run `pnpm brand:geometry` then `pnpm brand:splash`. `pnpm brand:sounds` regenerates the placeholder UI sounds.
 
 Restart Metro with `pnpm start:clean` after installing native deps (`react-native-reanimated`).
 

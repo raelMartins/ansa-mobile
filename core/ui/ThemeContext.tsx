@@ -8,68 +8,74 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useColorScheme } from "react-native";
+import { getProduct, type AnsaProduct, type AnsaProductId } from "../products/catalog";
 import {
-  ColorScheme,
+  DEFAULT_THEME_PREFERENCE,
   THEME_STORAGE_KEY,
   colorsForScheme,
   fontFamily,
+  type ColorScheme,
   type ThemeColors,
+  type ThemePreference,
 } from "./theme";
 
 type ThemeContextValue = {
   scheme: ColorScheme;
+  preference: ThemePreference;
   colors: ThemeColors;
   fonts: typeof fontFamily;
-  setScheme: (scheme: ColorScheme) => void;
-  toggleScheme: () => void;
+  /** Product whose colours the shell wears (null before a product is chosen). */
+  product: AnsaProduct | null;
+  setPreference: (preference: ThemePreference) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [scheme, setSchemeState] = useState<ColorScheme>("light");
+function isPreference(value: unknown): value is ThemePreference {
+  return value === "light" || value === "dark" || value === "system";
+}
+
+export function ThemeProvider({
+  children,
+  productId = null,
+}: {
+  children: ReactNode;
+  productId?: AnsaProductId | null;
+}) {
+  const system = useColorScheme();
+  const [preference, setPreferenceState] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
 
   useEffect(() => {
     void SecureStore.getItemAsync(THEME_STORAGE_KEY)
       .then((stored) => {
-        if (stored === "light" || stored === "dark") {
-          setSchemeState(stored);
+        if (isPreference(stored)) {
+          setPreferenceState(stored);
         }
       })
       .catch(() => {
-        /* Expo Go / sim may reject reads; default light is fine */
+        /* Expo Go / sim may reject reads; the default is fine */
       });
   }, []);
 
-  const persistScheme = useCallback((next: ColorScheme) => {
+  const setPreference = useCallback((next: ThemePreference) => {
+    setPreferenceState(next);
     void SecureStore.setItemAsync(THEME_STORAGE_KEY, next).catch(() => {});
   }, []);
 
-  const setScheme = useCallback(
-    (next: ColorScheme) => {
-      setSchemeState(next);
-      persistScheme(next);
-    },
-    [persistScheme],
-  );
-
-  const toggleScheme = useCallback(() => {
-    setSchemeState((prev) => {
-      const next = prev === "light" ? "dark" : "light";
-      persistScheme(next);
-      return next;
-    });
-  }, [persistScheme]);
+  const scheme: ColorScheme = preference === "system" ? (system === "dark" ? "dark" : "light") : preference;
+  const product = productId ? getProduct(productId) : null;
 
   const value = useMemo(
     () => ({
       scheme,
-      colors: colorsForScheme(scheme),
+      preference,
+      colors: colorsForScheme(scheme, product),
       fonts: fontFamily,
-      setScheme,
-      toggleScheme,
+      product,
+      setPreference,
     }),
-    [scheme, setScheme, toggleScheme],
+    [scheme, preference, product, setPreference],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,148 +1,129 @@
 /**
- * Motion spec (welcome funnel):
- * - Splash: wordmark scale/fade in, glow, fade out → next phase.
- * - Intro: horizontal paging + per-slide FadeInUp; footer CTA cross-fade.
- * - Auth: AuthShell FadeInDown; stack fade between sign-in/up.
- * - Product picker: bubble float loop + FadeIn stagger; merchant → circular reveal overlay.
- * - Reduced motion: prefer shorter splash (quick) and system limits where exposed.
+ * Motion spec (entry experience) — docs/mobile-welcome-motion-spec.md
+ * - Boot: native splash (icon over wordmark) stays up until session + onboarding are known.
+ * - Returning (signed in + product): QuickSplash → dashboard.
+ * - Otherwise: WelcomeFunnel (full cinematic, or short if the intro was already seen).
+ * - Exit to dashboard: funnel/splash fades while lifting slightly; dashboard rises 16px into place.
+ * - Reduced motion: handled inside QuickSplash / WelcomeFunnel; exits stay short fades.
  */
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import Animated, {
+  withDelay,
+  withTiming,
+  type EntryExitAnimationFunction,
+} from "react-native-reanimated";
+import { ecosystemPalette } from "../core/brand/ecosystem";
+import { useOnboarding } from "../core/onboarding/OnboardingContext";
+import { useSession } from "../core/session/SessionContext";
+import { useTheme } from "../core/ui/ThemeContext";
 import { MerchantBootstrapGate } from "../merchant/MerchantBootstrapGate";
 import { MerchantProvider } from "../merchant/MerchantContext";
-import {
-  loadOnboarding,
-  markIntroComplete,
-  setSelectedProduct,
-  type AnsaProductId,
-  type OnboardingSnapshot,
-} from "../core/onboarding/onboardingStorage";
-import { AuthStack } from "../core/navigation/AuthStack";
-import { useSession } from "../core/session/SessionContext";
-import { brand } from "../core/ui/brandColors";
-import { EcosystemIntroScreen } from "./EcosystemIntroScreen";
-import { MerchantRevealOverlay } from "./MerchantRevealOverlay";
-import { ProductPickerScreen } from "./ProductPickerScreen";
-import { registerWelcomeReplay } from "./replay";
-import { SplashScreen } from "./SplashScreen";
+import { motion, welcomeTiming } from "./motion";
+import { QuickSplash } from "./QuickSplash";
+import { WelcomeFunnel } from "./welcome/WelcomeFunnel";
 
-type Phase = "splash" | "intro" | "auth" | "product" | "merchant";
+type Phase =
+  | { kind: "boot" }
+  | { kind: "quick" }
+  | { kind: "welcome"; mode: "full" | "short"; requireAuth: boolean }
+  | { kind: "app" };
 
-type RevealOrigin = { x: number; y: number; size: number };
+const EXIT_MS = welcomeTiming.exitToApp;
 
-function resolvePhase(snapshot: OnboardingSnapshot, authenticated: boolean): Phase {
-  if (!snapshot.introComplete) {
-    return "intro";
+const liftAway: EntryExitAnimationFunction = () => {
+  "worklet";
+  return {
+    initialValues: { opacity: 1, transform: [{ scale: 1 }] },
+    animations: {
+      opacity: withTiming(0, { duration: EXIT_MS }),
+      transform: [{ scale: withTiming(1.05, { duration: EXIT_MS, easing: motion.easing }) }],
+    },
+  };
+};
+
+const riseIn: EntryExitAnimationFunction = () => {
+  "worklet";
+  return {
+    initialValues: { opacity: 0, transform: [{ translateY: 16 }] },
+    animations: {
+      opacity: withDelay(60, withTiming(1, { duration: 420 })),
+      transform: [{ translateY: withDelay(60, withTiming(0, { duration: 520, easing: motion.easing })) }],
+    },
+  };
+};
+
+function decide(authenticated: boolean, introComplete: boolean, hasProduct: boolean): Phase {
+  if (authenticated && hasProduct) {
+    return { kind: "quick" };
   }
-  if (!authenticated) {
-    return "auth";
+  if (authenticated) {
+    return { kind: "welcome", mode: "full", requireAuth: false };
   }
-  if (!snapshot.selectedProduct) {
-    return "product";
-  }
-  return "merchant";
+  return { kind: "welcome", mode: introComplete ? "short" : "full", requireAuth: true };
 }
 
 export function AppExperienceFlow() {
   const { status } = useSession();
-  const [onboarding, setOnboarding] = useState<OnboardingSnapshot | null>(null);
-  const [phase, setPhase] = useState<Phase>("splash");
-  const [revealOrigin, setRevealOrigin] = useState<RevealOrigin | null>(null);
-  const [showReveal, setShowReveal] = useState(false);
-
-  const refreshOnboarding = useCallback(async () => {
-    setOnboarding(await loadOnboarding());
-  }, []);
-
-  useEffect(() => {
-    void refreshOnboarding();
-  }, [refreshOnboarding]);
-
-  useEffect(() => {
-    return registerWelcomeReplay(() => {
-      void refreshOnboarding().then(() => {
-        setShowReveal(false);
-        setRevealOrigin(null);
-        setPhase("splash");
-      });
-    });
-  }, [refreshOnboarding]);
+  const { ready, introComplete, selectedProduct, welcomeRun } = useOnboarding();
+  const { scheme } = useTheme();
+  const [phase, setPhase] = useState<Phase>({ kind: "boot" });
+  /** Remount key so a replay restarts the choreography. */
+  const [run, setRun] = useState(0);
+  const lastWelcomeRun = useRef(welcomeRun);
+  const splashHidden = useRef(false);
 
   const authenticated = status === "authenticated";
-  const bootReady = onboarding !== null && status !== "loading";
-
-  const handleSplashComplete = useCallback(() => {
-    if (!onboarding) {
-      return;
-    }
-    setPhase(resolvePhase(onboarding, authenticated));
-  }, [authenticated, onboarding]);
+  const bootReady = ready && status !== "loading";
 
   useEffect(() => {
-    if (phase !== "auth" || !authenticated || !onboarding) {
-      return;
+    if (phase.kind === "boot" && bootReady) {
+      setPhase(decide(authenticated, introComplete, selectedProduct !== null));
     }
-    setPhase(resolvePhase(onboarding, true));
-  }, [authenticated, onboarding, phase]);
+  }, [phase.kind, bootReady, authenticated, introComplete, selectedProduct]);
 
   useEffect(() => {
-    if (!onboarding || status === "loading") {
-      return;
+    if (welcomeRun !== lastWelcomeRun.current) {
+      lastWelcomeRun.current = welcomeRun;
+      setRun((n) => n + 1);
+      setPhase({ kind: "boot" });
     }
-    if (status === "unauthenticated" && (phase === "merchant" || phase === "product")) {
-      setPhase("auth");
+  }, [welcomeRun]);
+
+  useEffect(() => {
+    if (phase.kind === "app" && status === "unauthenticated") {
+      setRun((n) => n + 1);
+      setPhase({ kind: "welcome", mode: introComplete ? "short" : "full", requireAuth: true });
     }
-  }, [status, phase, onboarding]);
+  }, [phase.kind, status, introComplete]);
 
-  const handleIntroComplete = useCallback(async () => {
-    await markIntroComplete();
-    const snapshot = await loadOnboarding();
-    setOnboarding(snapshot);
-    setPhase(resolvePhase(snapshot, authenticated));
-  }, [authenticated]);
+  useEffect(() => {
+    if (phase.kind === "boot" || splashHidden.current) return;
+    splashHidden.current = true;
+    requestAnimationFrame(() => SplashScreen.hide());
+  }, [phase.kind]);
 
-  const handleProductSelect = useCallback(async (product: AnsaProductId, origin: RevealOrigin) => {
-    await setSelectedProduct(product);
-    const snapshot = await loadOnboarding();
-    setOnboarding(snapshot);
-    setRevealOrigin(origin);
-    setPhase("merchant");
-    setShowReveal(true);
-  }, []);
-
-  const quickSplash = Boolean(onboarding?.introComplete && authenticated && onboarding?.selectedProduct);
-
-  if (!bootReady) {
-    return (
-      <View style={styles.boot}>
-        <ActivityIndicator size="large" color={brand.honey} />
-      </View>
-    );
-  }
+  const enterApp = useCallback(() => setPhase({ kind: "app" }), []);
 
   return (
-    <View style={styles.root}>
-      {phase === "splash" ? (
-        <SplashScreen ready={bootReady} quick={quickSplash} onComplete={handleSplashComplete} />
+    <View style={[styles.root, { backgroundColor: ecosystemPalette(scheme).background }]}>
+      {phase.kind === "app" ? (
+        <Animated.View key={`app-${run}`} entering={riseIn} style={styles.fill}>
+          <MerchantProvider>
+            <MerchantBootstrapGate />
+          </MerchantProvider>
+        </Animated.View>
       ) : null}
-      {phase === "intro" ? <EcosystemIntroScreen onComplete={() => void handleIntroComplete()} /> : null}
-      {phase === "auth" ? <AuthStack /> : null}
-      {phase === "product" ? (
-        <ProductPickerScreen onSelect={(id, layout) => void handleProductSelect(id, layout)} />
+      {phase.kind === "welcome" ? (
+        <Animated.View key={`welcome-${run}`} exiting={liftAway} style={StyleSheet.absoluteFill}>
+          <WelcomeFunnel mode={phase.mode} requireAuth={phase.requireAuth} onFinished={enterApp} />
+        </Animated.View>
       ) : null}
-      {phase === "merchant" ? (
-        <MerchantProvider>
-          <MerchantBootstrapGate />
-        </MerchantProvider>
-      ) : null}
-      {showReveal && revealOrigin ? (
-        <MerchantRevealOverlay
-          origin={revealOrigin}
-          onFinished={() => {
-            setShowReveal(false);
-            setRevealOrigin(null);
-          }}
-        />
+      {phase.kind === "quick" ? (
+        <Animated.View key={`quick-${run}`} exiting={liftAway} style={StyleSheet.absoluteFill}>
+          <QuickSplash onDone={enterApp} />
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -150,10 +131,5 @@ export function AppExperienceFlow() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  boot: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: brand.forest,
-  },
+  fill: { flex: 1 },
 });
